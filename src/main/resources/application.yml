@@ -2,5 +2,15 @@ spring:
   h2:
     console:
       enabled: false
+  exposed:
+    generate-ddl: true
+    excluded-packages: i.server.utils,i.server.handler
+  profiles:
+    default: prod
+  application:
+    name: "WatchDog-Server"
+  data:
+    light-db:
+      mode: jedis
 server:
   port: 8090
