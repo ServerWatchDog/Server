@@ -1,6 +1,7 @@
 package i.server.modules
 
 import org.d7z.light.db.api.LightDB
+import org.d7z.light.db.modules.cache.LightCache
 import org.d7z.light.db.modules.session.LightSession
 import org.d7z.objects.format.ObjectFormatContext
 import org.springframework.context.annotation.Bean
@@ -13,4 +14,7 @@ class LightDBConfiguration {
         LightSession.Builder(lightDB).apply {
             this.dataCovert = objectFormatContext
         }
+    @Bean
+    fun cache(lightDB: LightDB) =
+        LightCache(lightDB)
 }
