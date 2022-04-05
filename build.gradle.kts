@@ -1,11 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.0.0-SNAPSHOT"
+    id("org.springframework.boot") version "3.0.0-M2"
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
     kotlin("jvm") version "1.6.20"
     kotlin("plugin.spring") version "1.6.20"
-    kotlin("kapt") version "1.6.20"
     kotlin("plugin.noarg") version "1.6.20"
 }
 
@@ -20,7 +19,6 @@ val lightDBCacheVersion: String by rootProject
 configurations {
     compileOnly {
         extendsFrom(configurations.annotationProcessor.get())
-        extendsFrom(configurations.kapt.get())
     }
 }
 
@@ -59,7 +57,7 @@ dependencies {
     implementation("com.github.d7z-team.light-db:db-memory")
     implementation("com.github.d7z-team.light-db:db-spring-boot-starter")
     implementation("org.jetbrains.exposed:exposed-spring-boot-starter")
-    implementation("org.jetbrains.exposed:exposed-kotlin-datetime")
+    implementation("org.jetbrains.exposed:exposed-java-time")
     implementation("org.jetbrains.exposed:exposed-money")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-freemarker")
@@ -67,12 +65,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
-    kapt("org.springframework.boot:spring-boot-configuration-processor")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }

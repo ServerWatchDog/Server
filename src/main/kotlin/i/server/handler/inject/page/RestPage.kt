@@ -4,5 +4,5 @@ import io.swagger.v3.oas.annotations.Hidden
 
 @Hidden
 annotation class RestPage(
-    val size: Int = 10
+    val size: Int = 10,
 )

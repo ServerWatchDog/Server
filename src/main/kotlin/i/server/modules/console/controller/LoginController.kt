@@ -1,7 +1,7 @@
 package i.server.modules.console.controller
 
-import i.server.modules.console.service.IUserViewService
 import i.server.modules.console.model.view.LoginView
+import i.server.modules.console.service.IUserViewService
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/view/public/login")
-class UserController(
+class LoginController(
     private val userView: IUserViewService,
 ) {
     @PostMapping("")
