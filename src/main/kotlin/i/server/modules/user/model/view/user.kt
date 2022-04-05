@@ -9,7 +9,6 @@ data class UserView(
     @Email val email: String,
     val phone: String,
     val password: String,
-    val group: List<Int>,
 )
 
 data class UserResultView(

@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Transactional
 @Service
-class UserServiceImpl : IUserService, CRUDServiceImpl<UserView, UserResultView, Int>() {
+class UserServiceImpl : IUserService, CRUDServiceImpl<UserView, UserResultView, Int> {
     override val table = UsersTable
     override val tableToOutput: IdTable<Int>.(ResultRow) -> UserResultView = {
         UserResultView(

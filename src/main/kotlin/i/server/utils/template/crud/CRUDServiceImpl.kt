@@ -4,7 +4,6 @@ import i.server.modules.user.model.table.UsersTable
 import i.server.utils.BadRequestException
 import i.server.utils.template.PageView
 import i.server.utils.template.SimpleView
-import org.d7z.logger4k.core.utils.getLogger
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.deleteWhere
@@ -17,16 +16,14 @@ import org.springframework.data.domain.Pageable
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
-abstract class CRUDServiceImpl<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID>> :
+interface CRUDServiceImpl<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID>> :
     CRUDService<IN, OUT, ID> {
 
-    abstract val table: IdTable<ID>
+    val table: IdTable<ID>
 
-    abstract val tableToOutput: IdTable<ID>.(ResultRow) -> OUT
+    val tableToOutput: IdTable<ID>.(ResultRow) -> OUT
 
-    abstract val inputToTable: IdTable<ID>.(UpdateBuilder<Int>, IN) -> Unit
-
-    private val logger = getLogger()
+    val inputToTable: IdTable<ID>.(UpdateBuilder<Int>, IN) -> Unit
 
     @Transactional
     override fun select(pageable: Pageable): PageView<OUT> {

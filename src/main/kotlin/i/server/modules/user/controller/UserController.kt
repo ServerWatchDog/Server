@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/admin/user")
+@RequestMapping("/api/admin/users")
 class UserController(service: IUserService) :
     CRUDController<UserView, UserResultView, Int>(
         service
