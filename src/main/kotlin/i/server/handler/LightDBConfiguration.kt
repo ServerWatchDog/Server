@@ -1,4 +1,4 @@
-package i.server.modules
+package i.server.handler
 
 import org.d7z.light.db.api.LightDB
 import org.d7z.light.db.modules.cache.LightCache

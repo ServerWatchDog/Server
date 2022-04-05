@@ -15,6 +15,7 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 val lightDBVersion: String by rootProject
 val objectFormatVersion: String by rootProject
+val lightDBCacheVersion: String by rootProject
 
 configurations {
     compileOnly {
@@ -37,11 +38,14 @@ repositories {
 }
 
 dependencies {
+    implementation(platform("org.jetbrains.exposed:exposed-bom:0.37.3"))
+    implementation("ognl:ognl:3.3.2")
     implementation(platform("com.github.d7z-team.light-db:bom:$lightDBVersion"))
     implementation(platform("com.github.d7z-team.object-format:bom:$objectFormatVersion"))
     implementation(platform("com.github.d7z-team.light-db-session:bom:0.1.0"))
-    implementation(platform("com.github.d7z-team.light-db-cache:bom:df2fbfbcda"))
+    implementation(platform("com.github.d7z-team.light-db-cache:bom:$lightDBCacheVersion"))
     implementation("com.github.d7z-team.light-db-session:session-core")
+    implementation("com.github.d7z-team:security4k:0.1.0")
     implementation("com.github.d7z-team.light-db-cache:cache-core")
     implementation("com.github.d7z-team.object-format:format-core")
     implementation("com.github.d7z-team.object-format:format-spring-boot-starter")
@@ -54,7 +58,9 @@ dependencies {
     implementation("com.github.d7z-team.light-db:db-jedis")
     implementation("com.github.d7z-team.light-db:db-memory")
     implementation("com.github.d7z-team.light-db:db-spring-boot-starter")
-    implementation("org.jetbrains.exposed:exposed-spring-boot-starter:0.37.3")
+    implementation("org.jetbrains.exposed:exposed-spring-boot-starter")
+    implementation("org.jetbrains.exposed:exposed-kotlin-datetime")
+    implementation("org.jetbrains.exposed:exposed-money")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-freemarker")
     implementation("org.springframework.boot:spring-boot-starter-mail")
@@ -69,7 +75,6 @@ dependencies {
     kapt("org.springframework.boot:spring-boot-configuration-processor")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.security:spring-security-test")
 }
 
 tasks.withType<KotlinCompile> {

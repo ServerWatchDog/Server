@@ -1,4 +1,9 @@
 spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://localhost:3306/watchdog
+    username: watchdog
+    password: watchdog
   exposed:
     show-sql: true
 springdoc:
@@ -6,7 +11,6 @@ springdoc:
     path: /api-docs
   swagger-ui:
     enabled: true
-
 logging:
   level:
     i.server: debug
