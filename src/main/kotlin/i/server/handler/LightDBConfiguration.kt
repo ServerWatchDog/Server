@@ -14,7 +14,15 @@ class LightDBConfiguration {
         LightSession.Builder(lightDB).apply {
             this.dataCovert = objectFormatContext
         }
+
     @Bean
     fun cache(lightDB: LightDB) =
         LightCache(lightDB)
+
+    @Bean
+    fun lightSession(lightDB: LightDB, covert: ObjectFormatContext) =
+        LightSession.Builder(lightDB).apply {
+            dataCovert = covert
+            this.ttl = 86400
+        }.build() as LightSession
 }

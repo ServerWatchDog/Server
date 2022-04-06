@@ -9,6 +9,7 @@ data class UserView(
     @Email val email: String,
     val phone: String,
     val password: String,
+    val twoFactor: String,
 )
 
 data class UserResultView(
@@ -18,6 +19,6 @@ data class UserResultView(
     val phone: String,
     override val createTime: LocalDateTime,
     override val updateTime: LocalDateTime,
-    val group: List<String>,
+    val role: List<String>,
 
 ) : CRUDResultView<Int>

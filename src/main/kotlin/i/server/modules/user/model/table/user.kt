@@ -10,7 +10,7 @@ object UsersTable : IntIdTable("t_users"), TimeTable {
     val name = varchar("name", 128)
     val phone = varchar("phone", 128)
     val email = varchar("mail", 128)
-    val twoFactor = varchar("twoFactor", 128)
+    val twoFactor = varchar("twoFactor", 128).default("")
     val password = varchar("password", 128)
     val lastLoginTime = datetime("last_login_time").defaultExpression(CurrentDateTime())
     override val createTime = datetime("create_time").defaultExpression(CurrentDateTime())

@@ -12,7 +12,7 @@ data class RoleResultView(
     override val createTime: LocalDateTime,
 ) : CRUDResultView<Int> {
     data class RoleUserResultView(
-        val id: String,
+        val id: Int,
         val name: String,
         val email: String,
     )
@@ -20,5 +20,7 @@ data class RoleResultView(
 
 data class RoleView(
     val name: String,
+    val description: String,
     val users: List<Int>,
+    val permissions: List<String>,
 )

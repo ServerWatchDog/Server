@@ -1,10 +1,12 @@
 package i.server.utils.template.crud
 
 import i.server.handler.inject.page.RestPage
+import i.server.handler.inject.security.Permission
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -26,30 +28,37 @@ import org.springframework.web.bind.annotation.RequestBody
 abstract class CRUDController<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID>>(
     private val service: CRUDService<IN, OUT, ID>,
 ) {
+    @Permission("READ")
     @Operation(
         description = "带分页的无条件查询",
+        security = [SecurityRequirement(name = "bearer")],
         parameters = [
             Parameter(
                 name = "index",
                 schema = Schema(implementation = Int::class, defaultValue = "0"),
-                `in` = ParameterIn.QUERY
+                `in` = ParameterIn.QUERY,
+                example = "0"
             ),
             Parameter(
                 name = "size",
                 schema = Schema(implementation = Int::class, defaultValue = "10"),
-                `in` = ParameterIn.QUERY
+                `in` = ParameterIn.QUERY,
+                example = "10"
             )
         ]
     )
     @GetMapping("")
     open fun getAll(@RestPage pageable: Pageable) = service.select(pageable)
 
+    @Permission("WRITE")
     @PostMapping("")
     open fun insert(@Valid @RequestBody input: IN) = service.insert(input)
 
+    @Permission("WRITE")
     @PutMapping("{id}")
     open fun update(@PathVariable("id") id: ID, @Valid @RequestBody input: IN) = service.update(id, input)
 
+    @Permission("WRITE")
     @DeleteMapping("{id}")
     open fun delete(@PathVariable("id") id: ID) = service.delete(id)
 }

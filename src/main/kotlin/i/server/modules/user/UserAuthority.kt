@@ -1,6 +1,8 @@
 package i.server.modules.user
 
-object UserAuthority {
-    const val CLIENT_ADMIN_WRITE = "USER_READ"
-    const val CLIENT_ADMIN_READ = "USER_WRITE"
+import i.server.modules.user.service.impl.PermissionsServiceImpl
+
+object UserAuthority : PermissionsServiceImpl.Authority {
+    const val ADMIN_WRITE = "用户模块写"
+    const val ADMIN_READ = "用户模块读"
 }

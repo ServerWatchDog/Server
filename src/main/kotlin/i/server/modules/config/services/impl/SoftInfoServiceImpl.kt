@@ -20,7 +20,9 @@ class SoftInfoServiceImpl(
     }
 
     override fun run(args: ApplicationArguments?) {
-        if (configRepository.getOptionalValue("security.rsa.public-key").isEmpty) {
+        if (configRepository.getOptionalValue("security.rsa.public-key").isEmpty ||
+            configRepository.getOptionalValue("security.rsa.private-key").isEmpty
+        ) {
             val rsaKeyGenerator = RSAKeyGenerator(4096)
             configRepository.setValue("security.rsa.public-key", rsaKeyGenerator.publicKeyText)
             configRepository.setValue("security.rsa.private-key", rsaKeyGenerator.privateKeyText)

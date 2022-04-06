@@ -2,6 +2,7 @@ package i.server.utils.template.crud
 
 import i.server.modules.user.model.table.UsersTable
 import i.server.utils.BadRequestException
+import i.server.utils.autoRollback
 import i.server.utils.template.PageView
 import i.server.utils.template.SimpleView
 import org.jetbrains.exposed.dao.id.IdTable
@@ -16,57 +17,63 @@ import org.springframework.data.domain.Pageable
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
-interface CRUDServiceImpl<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID>> :
+interface CRUDServiceImpl<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID>, TABLE : IdTable<ID>> :
     CRUDService<IN, OUT, ID> {
 
-    val table: IdTable<ID>
+    val table: TABLE
 
-    val tableToOutput: IdTable<ID>.(ResultRow) -> OUT
+    fun TABLE.tableToOutput(it: ResultRow): OUT
+    fun TABLE.inputToTable(it: UpdateBuilder<Int>, input: IN)
 
-    val inputToTable: IdTable<ID>.(UpdateBuilder<Int>, IN) -> Unit
+    fun ResultRow.insertAfterHook(id: ID, input: IN) {
+    }
 
-    @Transactional
-    override fun select(pageable: Pageable): PageView<OUT> {
-        return table.selectAll().limit(pageable.pageSize, pageable.offset).map {
-            tableToOutput(table, it)
+    fun ResultRow.updateAfterHook(id: ID, input: IN) {
+    }
+
+    override fun select(pageable: Pageable): PageView<OUT> = autoRollback {
+        table.selectAll().limit(pageable.pageSize, pageable.offset).map {
+            table.tableToOutput(it)
         }.let {
             PageView(it, pageable.pageNumber, pageable.pageSize, UsersTable.selectAll().count())
         }
     }
 
     @Transactional
-    override fun insert(input: IN): OUT {
-        return table.insertAndGetId {
-            inputToTable(this, it, input)
-        }.value.let {
-            table.select { table.id eq it }.first().let {
-                if (this is TimeTable) {
-                    it[this.createTime] = LocalDateTime.now()
-                    it[this.updateTime] = LocalDateTime.now()
-                }
-                tableToOutput(table, it)
+    override fun insert(input: IN): OUT = autoRollback {
+        table.insertAndGetId {
+            inputToTable(it, input)
+            if (this is TimeTable) {
+                it[this.createTime] = LocalDateTime.now()
+                it[this.updateTime] = LocalDateTime.now()
+            }
+        }.value.let { id ->
+            table.select { table.id eq id }.first().let {
+                it.insertAfterHook(id, input)
+                table.tableToOutput(it)
             }
         }
     }
 
     @Transactional
-    override fun update(id: ID, input: IN): OUT {
+    override fun update(id: ID, input: IN): OUT = autoRollback {
         if (table.select { table.id eq id }.empty()) {
             throw BadRequestException("更新错误！未找到 id 为 $id 的数据.")
         }
         table.update({ table.id.eq(id) }) {
-            inputToTable(this, it, input)
+            inputToTable(it, input)
             if (this is TimeTable) {
                 it[this.updateTime] = LocalDateTime.now()
             }
         }
-        return table.select { table.id eq id }.first().let {
-            tableToOutput(table, it)
+        table.select { table.id eq id }.first().let {
+            it.updateAfterHook(id, input)
+            table.tableToOutput(it)
         }
     }
 
     @Transactional
-    override fun delete(id: ID): SimpleView<Boolean> {
-        return SimpleView(table.deleteWhere { table.id eq id } != 0)
+    override fun delete(id: ID): SimpleView<Boolean> = autoRollback {
+        SimpleView(table.deleteWhere { table.id eq id } != 0)
     }
 }
