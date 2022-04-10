@@ -6,6 +6,9 @@ spring:
     password: watchdog
   exposed:
     show-sql: true
+  data:
+    light-db:
+      mode: jedis
 springdoc:
   api-docs:
     path: /api-docs

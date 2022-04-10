@@ -19,9 +19,8 @@ import kotlin.reflect.full.isSubclassOf
  */
 @Component
 class SessionResolver(
-    lightSession: ILightSession,
+    private val lightSession: ILightSession,
 ) : HandlerMethodArgumentResolver {
-    private val sessions = lightSession.findSessionGroupContext("users")
     private val logger = getLogger()
     override fun supportsParameter(parameter: MethodParameter): Boolean {
         return parameter.hasParameterAnnotation(Session::class.java) &&
@@ -46,7 +45,7 @@ class SessionResolver(
         if (tokenType != permission.tag) {
             throw ForbiddenException("Token 不适用此接口.")
         }
-        return sessions.querySession(token).orElseThrow {
+        return lightSession.findSessionContext(token).orElseThrow {
             logger.debug("Token {} 无法被识别.", token)
             throw ForbiddenException("Token 校验失败.")
         }

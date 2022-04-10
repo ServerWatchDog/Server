@@ -9,8 +9,5 @@ spring:
     default: prod
   application:
     name: "WatchDogServer"
-  data:
-    light-db:
-      mode: jedis
 server:
   port: 8090

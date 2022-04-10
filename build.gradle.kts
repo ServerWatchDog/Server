@@ -14,6 +14,7 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 val lightDBVersion: String by rootProject
 val objectFormatVersion: String by rootProject
+val lightDBSessionVersion: String by rootProject
 val lightDBCacheVersion: String by rootProject
 
 configurations {
@@ -30,6 +31,7 @@ noArg {
 
 repositories {
     mavenCentral()
+    maven("https://repo.open-edgn.cn/maven/")
     maven { url = uri("https://repo.spring.io/milestone") }
     maven { url = uri("https://repo.spring.io/snapshot") }
     maven { url = uri("https://jitpack.io") }
@@ -37,11 +39,14 @@ repositories {
 
 dependencies {
     implementation(platform("org.jetbrains.exposed:exposed-bom:0.37.3"))
-    implementation("ognl:ognl:3.3.2")
     implementation(platform("com.github.d7z-team.light-db:bom:$lightDBVersion"))
     implementation(platform("com.github.d7z-team.object-format:bom:$objectFormatVersion"))
-    implementation(platform("com.github.d7z-team.light-db-session:bom:0.1.0"))
+    implementation(platform("com.github.d7z-team.light-db-session:bom:$lightDBSessionVersion"))
     implementation(platform("com.github.d7z-team.light-db-cache:bom:$lightDBCacheVersion"))
+    implementation("com.github.d7z-team.light-db:db-api")
+    implementation("com.github.d7z-team.light-db:db-jedis")
+    implementation("com.github.d7z-team.light-db:db-memory")
+    implementation("com.github.d7z-team.light-db:db-spring-boot-starter")
     implementation("com.github.d7z-team.light-db-session:session-core")
     implementation("com.github.d7z-team:security4k:0.1.0")
     implementation("com.github.d7z-team.light-db-cache:cache-core")
@@ -52,10 +57,7 @@ dependencies {
     implementation("com.github.d7z-team.logger4k:logger-forward:0.2.1")
     implementation("org.springdoc:springdoc-openapi-starter-common:2.0.0-M1")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.0-M1")
-    implementation("com.github.d7z-team.light-db:db-api")
-    implementation("com.github.d7z-team.light-db:db-jedis")
-    implementation("com.github.d7z-team.light-db:db-memory")
-    implementation("com.github.d7z-team.light-db:db-spring-boot-starter")
+    implementation("com.j256.two-factor-auth:two-factor-auth:1.3")
     implementation("org.jetbrains.exposed:exposed-spring-boot-starter")
     implementation("org.jetbrains.exposed:exposed-java-time")
     implementation("org.jetbrains.exposed:exposed-money")

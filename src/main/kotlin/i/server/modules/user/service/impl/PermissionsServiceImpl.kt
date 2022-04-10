@@ -26,7 +26,7 @@ class PermissionsServiceImpl(
         val components = packages.map { provider.findCandidateComponents(it) }.flatten()
         components.map { Class.forName(it.beanClassName).kotlin.objectInstance as Authority }
             .forEach { data ->
-                data::class.memberProperties.forEach { type ->
+                data::class.memberProperties.filter { type -> type.name != "group" }.forEach { type ->
                     autoRollback {
                         PermissionsTable.insertIgnore { insert ->
                             insert[id] = type.name
