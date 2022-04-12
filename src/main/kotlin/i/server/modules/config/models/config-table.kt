@@ -1,4 +1,4 @@
-package i.server.modules.config.models.table
+package i.server.modules.config.models
 
 import org.jetbrains.exposed.sql.Table
 

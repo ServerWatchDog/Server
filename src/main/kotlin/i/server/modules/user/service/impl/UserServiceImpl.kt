@@ -1,17 +1,16 @@
 package i.server.modules.user.service.impl
 
-import i.server.modules.user.model.table.PermissionsLinkRoleTable
-import i.server.modules.user.model.table.RolesTable
-import i.server.modules.user.model.table.UserLinkRoleTable
-import i.server.modules.user.model.table.UsersTable
-import i.server.modules.user.model.view.UserResultView
-import i.server.modules.user.model.view.UserView
+import i.server.modules.user.model.PermissionsLinkRoleTable
+import i.server.modules.user.model.RolesTable
+import i.server.modules.user.model.UserLinkRoleTable
+import i.server.modules.user.model.UserResultView
+import i.server.modules.user.model.UserView
+import i.server.modules.user.model.UsersTable
 import i.server.modules.user.service.IUserService
 import i.server.utils.PasswordUtils
 import i.server.utils.autoRollback
 import i.server.utils.template.crud.CRUDServiceImpl
 import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.leftJoin
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 import org.springframework.stereotype.Service
@@ -41,7 +40,11 @@ class UserServiceImpl : IUserService, CRUDServiceImpl<UserView, UserResultView, 
     override fun getPermissionsById(userId: Int): Set<String> = autoRollback {
         UserLinkRoleTable.leftJoin(RolesTable).leftJoin(PermissionsLinkRoleTable).select {
             UserLinkRoleTable.user eq userId
-        }.groupBy(PermissionsLinkRoleTable.permissions).map { it[PermissionsLinkRoleTable.permissions].value }.toSet()
+        }.groupBy(PermissionsLinkRoleTable.permissions).having {
+            PermissionsLinkRoleTable.permissions.isNotNull()
+        }.map {
+            it[PermissionsLinkRoleTable.permissions].value
+        }.toSet()
     }
 
     override fun hasPermissions(userId: Int, kProperty0: KProperty0<String>): Boolean {

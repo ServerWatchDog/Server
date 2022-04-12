@@ -34,7 +34,7 @@ class ErrorControllerAdvice {
     fun exceptionAdvice(error: Exception): ErrorResult {
         TransactionManager.currentOrNull()?.rollback()
         logger.errorThrowable("服务器内部错误.", error)
-        return ErrorResult(HttpStatus.INTERNAL_SERVER_ERROR, message = "INTERNAL_SERVER_ERROR")
+        return ErrorResult(HttpStatus.INTERNAL_SERVER_ERROR, message = "服务器内部错误")
     }
 
     @ExceptionHandler(ExposedSQLException::class)

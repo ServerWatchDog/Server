@@ -2,12 +2,12 @@ package i.server.modules.console.service.impl
 
 import com.j256.twofactorauth.TimeBasedOneTimePasswordUtil
 import i.server.modules.console.ConsoleAuthority
-import i.server.modules.console.model.view.LoginResultView
-import i.server.modules.console.model.view.LoginView
-import i.server.modules.console.model.view.LogoutResultView
+import i.server.modules.console.model.LoginResultView
+import i.server.modules.console.model.LoginView
+import i.server.modules.console.model.LogoutResultView
 import i.server.modules.console.service.IUserViewService
 import i.server.modules.user.model.UserSession
-import i.server.modules.user.model.table.UsersTable
+import i.server.modules.user.model.UsersTable
 import i.server.modules.user.service.IUserService
 import i.server.utils.PasswordUtils
 import org.d7z.light.db.modules.session.LightSession
@@ -15,8 +15,10 @@ import org.d7z.light.db.modules.session.api.ISessionContext
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.update
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Transactional
 @Service
@@ -54,6 +56,9 @@ class UserViewImpl(
         val newSession = userSessionGroup.newSession()
         val userSession = UserSession(newSession)
         userSession.userId = userId
+        UsersTable.update {
+            it[lastLoginTime] = LocalDateTime.now()
+        }
         return LoginResultView(0, newSession.sessionToken)
     }
 

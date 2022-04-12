@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "debug.skip-auth",
+      "type": "java.lang.Boolean",
+      "description": "跳过部分权限验证.",
+      "defaultValue": "false"
+    }
+  ]
+}

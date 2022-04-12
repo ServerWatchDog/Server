@@ -1,4 +1,4 @@
-package i.server.modules.console.model.view
+package i.server.modules.console.model
 
 data class LoginView(
     val account: String,

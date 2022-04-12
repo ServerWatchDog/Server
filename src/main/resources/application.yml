@@ -11,3 +11,5 @@ spring:
     name: "WatchDogServer"
 server:
   port: 8090
+debug:
+  skip-auth: false

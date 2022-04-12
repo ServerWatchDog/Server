@@ -1,6 +1,6 @@
 package i.server.modules.config.repositories
 
-import i.server.modules.config.models.table.SoftConfigTable
+import i.server.modules.config.models.SoftConfigTable
 import org.d7z.light.db.modules.cache.LightCache
 import org.d7z.light.db.modules.cache.utils.cacheContext
 import org.d7z.light.db.modules.cache.utils.cacheWriteContext

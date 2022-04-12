@@ -28,6 +28,7 @@ class WebMvcConfiguration(
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(authorityInterceptor)
             .addPathPatterns("/api/**")
+            .addPathPatterns("/view/**")
         super.addInterceptors(registry)
     }
 

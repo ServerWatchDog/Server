@@ -1,12 +1,12 @@
 package i.server.modules.user.service.impl
 
-import i.server.modules.user.model.table.PermissionsLinkRoleTable
-import i.server.modules.user.model.table.PermissionsTable
-import i.server.modules.user.model.table.RolesTable
-import i.server.modules.user.model.table.UserLinkRoleTable
-import i.server.modules.user.model.table.UsersTable
-import i.server.modules.user.model.view.RoleResultView
-import i.server.modules.user.model.view.RoleView
+import i.server.modules.user.model.PermissionsLinkRoleTable
+import i.server.modules.user.model.PermissionsTable
+import i.server.modules.user.model.RoleResultView
+import i.server.modules.user.model.RoleView
+import i.server.modules.user.model.RolesTable
+import i.server.modules.user.model.UserLinkRoleTable
+import i.server.modules.user.model.UsersTable
 import i.server.modules.user.service.IRoleService
 import i.server.utils.template.crud.CRUDServiceImpl
 import org.jetbrains.exposed.sql.ResultRow

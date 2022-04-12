@@ -17,3 +17,5 @@ springdoc:
 logging:
   level:
     i.server: debug
+debug:
+  skip-auth: true

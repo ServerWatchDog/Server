@@ -28,7 +28,7 @@ abstract class CRUDController<IN : Any, OUT : CRUDResultView<ID>, ID : Comparabl
     private val service: CRUDService<IN, OUT, ID>,
 ) {
     @Operation(
-        description = "带分页的无条件查询",
+        description = "分页查询",
         security = [SecurityRequirement(name = "bearer")],
         parameters = [
             Parameter(
@@ -48,12 +48,21 @@ abstract class CRUDController<IN : Any, OUT : CRUDResultView<ID>, ID : Comparabl
     @GetMapping("")
     open fun getAll(@RestPage pageable: Pageable) = service.select(pageable)
 
+    @Operation(
+        security = [SecurityRequirement(name = "bearer")]
+    )
     @PostMapping("")
     open fun insert(@Valid @RequestBody input: IN) = service.insert(input)
 
+    @Operation(
+        security = [SecurityRequirement(name = "bearer")]
+    )
     @PutMapping("{id}")
     open fun update(@PathVariable("id") id: ID, @Valid @RequestBody input: IN) = service.update(id, input)
 
+    @Operation(
+        security = [SecurityRequirement(name = "bearer")]
+    )
     @DeleteMapping("{id}")
     open fun delete(@PathVariable("id") id: ID) = service.delete(id)
 }

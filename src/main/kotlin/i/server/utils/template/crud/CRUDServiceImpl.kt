@@ -1,6 +1,5 @@
 package i.server.utils.template.crud
 
-import i.server.modules.user.model.table.UsersTable
 import i.server.utils.BadRequestException
 import i.server.utils.autoRollback
 import i.server.utils.template.PageView
@@ -35,7 +34,7 @@ interface CRUDServiceImpl<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID
         table.selectAll().limit(pageable.pageSize, pageable.offset).map {
             table.tableToOutput(it)
         }.let {
-            PageView(it, pageable.pageNumber, pageable.pageSize, UsersTable.selectAll().count())
+            PageView(it, pageable.pageNumber, pageable.pageSize, table.selectAll().count())
         }
     }
 

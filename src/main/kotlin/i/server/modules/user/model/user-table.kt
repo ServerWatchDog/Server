@@ -1,6 +1,7 @@
-package i.server.modules.user.model.table
+package i.server.modules.user.model
 
 import i.server.utils.template.crud.TimeTable
+import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentDateTime
@@ -22,4 +23,24 @@ object UserLinkRoleTable : Table("t_user_link_role") {
     val role = reference("role", RolesTable)
     val createTime = datetime("create_time").defaultExpression(CurrentDateTime())
     override val primaryKey = PrimaryKey(user, role, name = "pk_user_role")
+}
+
+object RolesTable : IntIdTable("t_roles"), TimeTable {
+    val name = varchar("name", 32)
+    val description = varchar("description", 60)
+    override val createTime = datetime("create_time").defaultExpression(CurrentDateTime())
+    override val updateTime = datetime("update_time").defaultExpression(CurrentDateTime())
+}
+
+object PermissionsTable : IdTable<String>("t_permissions") {
+    override val id = varchar("key", 32).entityId()
+    val description = varchar("description", 60).default("")
+    override val primaryKey by lazy { super.primaryKey ?: PrimaryKey(id) }
+}
+
+object PermissionsLinkRoleTable : Table("t_permissions_link_role") {
+    val permissions = reference("permissions", PermissionsTable)
+    val role = reference("role", RolesTable)
+    val createTime = datetime("create_time").defaultExpression(CurrentDateTime())
+    override val primaryKey = PrimaryKey(permissions, role, name = "pk_permissions_role")
 }
