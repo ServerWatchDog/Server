@@ -14,14 +14,14 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/view/login")
+@RequestMapping("/view/users")
 class LoginController(
     private val userView: IUserViewService,
 ) {
-    @PostMapping("")
+    @PostMapping("login")
     fun login(@Valid @RequestBody loginView: LoginView) = userView.login(loginView)
 
     @Permission("user", [CONSOLE_LOGIN])
-    @DeleteMapping("")
+    @DeleteMapping("logout")
     fun logout(@Session userSession: ISessionContext) = userView.logout(userSession)
 }

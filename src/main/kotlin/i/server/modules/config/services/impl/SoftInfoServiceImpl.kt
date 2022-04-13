@@ -15,6 +15,17 @@ class SoftInfoServiceImpl(
     private val configRepository: ConfigRepository,
 ) : SoftInfoService, ApplicationRunner {
 
+    override var agentRefreshDate: Long
+        get() = configRepository.getOptionalValue("agent.refresh.time").orElse("15").toLong()
+        set(value) {
+            configRepository.setValue("agent.refresh.time", value.toString())
+        }
+    override var logRefreshDate: Long
+        get() = configRepository.getOptionalValue("log.refresh.time").orElse("300").toLong()
+        set(value) {
+            configRepository.setValue("log.refresh.time", value.toString())
+        }
+
     override fun getPrivateKey(type: EncryptView.EncryptType): IDataEncrypt {
         return RSAPrivate(configRepository.getValue("security.rsa.private-key"))
     }

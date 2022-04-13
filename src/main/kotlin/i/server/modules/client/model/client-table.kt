@@ -28,6 +28,6 @@ object ClientGroupTable : IntIdTable("t_client_group"), TimeTable {
 
 object ClientLinkGroupTable : Table("t_client_link_client_group") {
     val client = reference("client", ClientTable)
-    val clientGroup = reference("group", ClientGroupTable)
-    override val primaryKey = PrimaryKey(client, clientGroup, name = "pk_client_group")
+    val group = reference("group", ClientGroupTable)
+    override val primaryKey = PrimaryKey(client, group, name = "pk_client_group")
 }

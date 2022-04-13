@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @Permission("user", [ClientAuthority.CLIENT_ADMIN])
-@RequestMapping("/api/admin/clients")
+@RequestMapping("/api/admin/client/clients")
 @RestController
 class ClientController(service: IClientService) :
     CRUDController<ClientView, ClientResultView, Int>(service)

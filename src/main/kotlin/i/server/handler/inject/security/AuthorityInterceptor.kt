@@ -6,7 +6,6 @@ import i.server.utils.TokenUtils
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.d7z.light.db.modules.session.api.ILightSession
-import org.d7z.light.db.modules.session.api.SessionException
 import org.d7z.logger4k.core.utils.getLogger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
@@ -30,7 +29,7 @@ class AuthorityInterceptor(
 
     val logger = getLogger()
     override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
-        if (handler !is HandlerMethod || skipAuth) {
+        if (handler !is HandlerMethod) {
             return true
         }
         // 通过查询注解来获取权限
@@ -39,12 +38,20 @@ class AuthorityInterceptor(
             logger.debug("放行路径 {}.", request.requestURI)
             true
         }
-        val token = TokenUtils.decodeToken { header ->
-            request.getHeader(header) ?: throw ForbiddenException("需要 Token.")
+        val token = try {
+            TokenUtils.decodeToken { header ->
+                request.getHeader(header) ?: throw ForbiddenException("需要 Token.")
+            }
+        } catch (e: Exception) {
+            if (skipAuth) {
+                return true
+            } else {
+                throw e
+            }
         }
         val sessionType = try {
             lightSession.getSessionType(token)
-        } catch (e: SessionException) {
+        } catch (e: Exception) {
             logger.debug("无法解析传入token：{}, 原因：{}.", token, e.message)
             throw BadRequestException("Token 不合法.")
         }

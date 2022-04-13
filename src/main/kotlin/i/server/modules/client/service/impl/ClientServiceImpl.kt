@@ -1,10 +1,15 @@
 package i.server.modules.client.service.impl
 
+import i.server.modules.agent.model.ClientSessionData
+import i.server.modules.client.model.ClientGroupTable
+import i.server.modules.client.model.ClientLinkGroupTable
 import i.server.modules.client.model.ClientResultView
 import i.server.modules.client.model.ClientTable
 import i.server.modules.client.model.ClientView
+import i.server.modules.client.model.MinClientGroupResultView
 import i.server.modules.client.service.ClientSessionService
 import i.server.modules.client.service.IClientService
+import i.server.modules.user.model.RolesTable
 import i.server.utils.autoRollback
 import i.server.utils.template.crud.CRUDServiceImpl
 import org.d7z.light.db.modules.session.LightSession
@@ -16,18 +21,24 @@ import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.util.Optional
 
-@Service
+@Service("client")
 class ClientServiceImpl(
     private val lightSession: LightSession,
 ) : IClientService, ClientSessionService, CRUDServiceImpl<ClientView, ClientResultView, Int, ClientTable> {
     override val table = ClientTable
 
     override fun ClientTable.tableToOutput(it: ResultRow): ClientResultView {
+        val clientId = it[id].value
         return ClientResultView(
-            id = it[id].value,
+            id = clientId,
             name = it[name], token = it[token], enable = it[enable],
             createTime = it[createTime], updateTime = it[updateTime],
-            description = it[description]
+            description = it[description],
+            groups = ClientLinkGroupTable
+                .leftJoin(ClientGroupTable)
+                .leftJoin(RolesTable).select { ClientLinkGroupTable.client eq clientId }.map {
+                    MinClientGroupResultView(it[RolesTable.name], it[ClientGroupTable.description])
+                }
         )
     }
 
@@ -65,6 +76,17 @@ class ClientServiceImpl(
     }
 
     override fun verify(sessionId: String, permissions: Array<String>): Boolean {
-        return getClientByToken(sessionId).filter { it.enable }.isPresent
+        return lightSession.findSessionContext(sessionId).or {
+            getClientByToken(sessionId).filter { it.enable }.map {
+                val newSession = lightSession.getSessionGroupContext("client").newSession(sessionId)
+                ClientSessionData(
+                    newSession
+                        .apply { refresh() }
+                ).apply {
+                    clientId = it.id
+                }
+                newSession
+            }
+        }.isPresent
     }
 }

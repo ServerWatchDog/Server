@@ -1,5 +1,6 @@
 package i.server.modules.user.service.impl
 
+import i.server.modules.user.model.MiniRoleResultView
 import i.server.modules.user.model.PermissionsLinkRoleTable
 import i.server.modules.user.model.RolesTable
 import i.server.modules.user.model.UserLinkRoleTable
@@ -33,7 +34,7 @@ class UserServiceImpl : IUserService, CRUDServiceImpl<UserView, UserResultView, 
 
     override fun UsersTable.tableToOutput(it: ResultRow): UserResultView {
         val map = UserLinkRoleTable.leftJoin(RolesTable).select { UserLinkRoleTable.user eq it[UsersTable.id].value }
-            .map { item -> item[RolesTable.name] }
+            .map { item -> MiniRoleResultView(item[RolesTable.id].value, item[RolesTable.name]) }
         return UserResultView(it[id].value, it[name], it[email], it[phone], it[createTime], it[updateTime], map)
     }
 

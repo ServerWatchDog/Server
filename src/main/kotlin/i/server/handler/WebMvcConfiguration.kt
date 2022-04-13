@@ -29,6 +29,7 @@ class WebMvcConfiguration(
         registry.addInterceptor(authorityInterceptor)
             .addPathPatterns("/api/**")
             .addPathPatterns("/view/**")
+            .addPathPatterns("/agent/**")
         super.addInterceptors(registry)
     }
 

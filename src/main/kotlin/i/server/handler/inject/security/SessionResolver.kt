@@ -35,7 +35,7 @@ class SessionResolver(
     ): Any? {
         val token = TokenUtils.decodeToken {
             webRequest.getHeader(it)
-                ?: throw RuntimeException("此处不应该为 NULL")
+                ?: throw ForbiddenException("此路径需要 Token.")
         }
         val tokenType = TokenUtils.getTokenHeader(token).trim()
         val permission =

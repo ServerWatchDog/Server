@@ -3,9 +3,10 @@ package i.server.modules.monitor.model
 import i.server.modules.client.model.ClientTable
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.Table
 
 /**
- * 监控的指标类型
+ * 监控的指标归组
  */
 object MonitorTypeGroupTable : IntIdTable("t_monitor_type_group") {
     val name = varchar("name", 255).uniqueIndex()
@@ -22,16 +23,18 @@ object MonitorTypeTable : IdTable<String>("t_monitor_type") {
 }
 
 enum class MonitorType {
-    TEXT,
-    NUMBER,
-    PERCENTAGE,
-    BOOL
+    TEXT, // 文本
+    NUMBER, // 数值
+    PERCENTAGE, // 百分比
+    BOOL, // 布尔类型
+    TIME, // 时间类型 （时间戳）
 }
 
 /**
  * client 支持的监控指标
  */
-object ClientMonitorTypeTable : IntIdTable("t_client_monitor_type") {
+object ClientMonitorTypeTable : Table("t_client_monitor_type") {
     val client = reference("client", ClientTable).index()
     val monitorType = reference("monitor_type", MonitorTypeTable)
+    override val primaryKey = PrimaryKey(client, monitorType)
 }
