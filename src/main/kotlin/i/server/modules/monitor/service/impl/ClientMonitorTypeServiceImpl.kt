@@ -10,10 +10,13 @@ import i.server.modules.monitor.model.MiniMonitorTypeResultView
 import i.server.modules.monitor.model.MonitorTypeTable
 import i.server.modules.monitor.service.IClientMonitorTypeService
 import i.server.utils.autoRollback
+import i.server.utils.template.PageView
 import org.d7z.light.db.api.LightDB
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -64,5 +67,19 @@ class ClientMonitorTypeServiceImpl(
             .select { ClientMonitorTypeTable.client eq clientId }.map {
                 it[MonitorTypeTable.id].value
             }
+    }
+
+    override fun getClientMonitors(page: Pageable): PageView<ClientMonitorTypeResultView> = autoRollback {
+        ClientTable.selectAll().limit(page.pageSize, page.offset).map {
+            val data = ClientMonitorTypeTable.leftJoin(MonitorTypeTable).select {
+                ClientMonitorTypeTable.client eq it[ClientTable.id].value
+            }.map { data ->
+                MiniMonitorTypeResultView(data[MonitorTypeTable.id].value, data[MonitorTypeTable.name])
+            }
+            ClientMonitorTypeResultView(
+                MiniClientResultView(it[ClientTable.id].value, it[ClientTable.name]),
+                data
+            )
+        }.let { data -> PageView(data, page.offset.toInt(), page.pageSize, ClientTable.selectAll().count()) }
     }
 }

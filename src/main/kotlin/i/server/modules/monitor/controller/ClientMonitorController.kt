@@ -1,11 +1,14 @@
 package i.server.modules.monitor.controller
 
+import i.server.handler.inject.page.RestPage
 import i.server.handler.inject.security.Permission
 import i.server.modules.client.ClientAuthority
 import i.server.modules.monitor.model.ClientMonitorGroupView
 import i.server.modules.monitor.model.ClientMonitorTypeResultView
 import i.server.modules.monitor.model.ClientMonitorTypeView
 import i.server.modules.monitor.service.IClientMonitorTypeService
+import org.springframework.data.domain.Pageable
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -33,4 +36,8 @@ class ClientMonitorController(private val service: IClientMonitorTypeService) {
     ): ClientMonitorTypeResultView {
         return service.updateByGroup(ClientMonitorGroupView(id, typesId))
     }
+
+    @GetMapping("")
+    @Permission("user", [ClientAuthority.CLIENT_ADMIN])
+    fun getClientMonitors(@RestPage page: Pageable) = service.getClientMonitors(page)
 }

@@ -9,6 +9,8 @@ import i.server.modules.client.model.MiniClientResultView
 import i.server.modules.client.service.IClientGroupService
 import i.server.modules.user.model.MiniRoleResultView
 import i.server.modules.user.model.RolesTable
+import i.server.utils.autoRollback
+import i.server.utils.template.SimpleView
 import i.server.utils.template.crud.CRUDServiceImpl
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.batchInsert
@@ -58,5 +60,12 @@ class ClientGroupServiceImpl :
         if (input.clients.isNotEmpty()) {
             insertAfterHook(id, input)
         }
+    }
+
+    override fun delete(id: Int): SimpleView<Boolean> = autoRollback {
+        ClientLinkGroupTable.deleteWhere {
+            ClientLinkGroupTable.group eq id
+        }
+        super.delete(id)
     }
 }

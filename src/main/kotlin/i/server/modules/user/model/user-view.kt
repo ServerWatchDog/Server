@@ -37,6 +37,7 @@ data class MiniUserResultView(
 data class RoleResultView(
     override val id: Int,
     val name: String,
+    val description: String,
     val permissions: List<String>,
     val users: List<MiniUserResultView>,
     override val updateTime: LocalDateTime,

@@ -1,10 +1,12 @@
 package i.server.modules.monitor.service.impl
 
 import i.server.modules.monitor.model.MiniMonitorTypeGroupResultView
+import i.server.modules.monitor.model.MonitorType
 import i.server.modules.monitor.model.MonitorTypeGroupTable
 import i.server.modules.monitor.model.MonitorTypeResultView
 import i.server.modules.monitor.model.MonitorTypeTable
 import i.server.modules.monitor.model.MonitorTypeView
+import i.server.modules.monitor.model.MonitorValueTypeResultView
 import i.server.modules.monitor.service.IMonitorTypeService
 import i.server.utils.template.crud.CRUDServiceImpl
 import org.jetbrains.exposed.sql.ResultRow
@@ -40,5 +42,9 @@ class MonitorTypeServiceImpl :
         it[description] = input.description
         it[type] = input.type
         it[group] = input.typeGroupId
+    }
+
+    override fun getTypeList(): Set<MonitorValueTypeResultView> {
+        return MonitorType.values().map { MonitorValueTypeResultView(it.name, it.description) }.toSet()
     }
 }

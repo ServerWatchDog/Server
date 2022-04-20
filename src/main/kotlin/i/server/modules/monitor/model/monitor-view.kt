@@ -56,3 +56,8 @@ data class ClientMonitorTypeResultView(
     val client: MiniClientResultView,
     val monitorType: List<MiniMonitorTypeResultView>,
 )
+
+data class MonitorValueTypeResultView(
+    val id: String,
+    val description: String,
+)

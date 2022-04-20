@@ -36,7 +36,9 @@ class ClientServiceImpl(
             description = it[description],
             groups = ClientLinkGroupTable
                 .leftJoin(ClientGroupTable)
-                .leftJoin(RolesTable).select { ClientLinkGroupTable.client eq clientId }.map {
+                .leftJoin(RolesTable).select { ClientLinkGroupTable.client eq clientId }.groupBy(
+                    RolesTable.id
+                ).map {
                     MinClientGroupResultView(it[RolesTable.name], it[ClientGroupTable.description])
                 }
         )

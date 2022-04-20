@@ -38,6 +38,7 @@ class RoleServiceImpl : CRUDServiceImpl<RoleView, RoleResultView, Int, RolesTabl
         return RoleResultView(
             it[table.id].value,
             it[table.name],
+            it[table.description],
             permissions, users,
             it[table.createTime],
             it[table.updateTime]

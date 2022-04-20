@@ -22,12 +22,12 @@ object MonitorTypeTable : IdTable<String>("t_monitor_type") {
     override val primaryKey = PrimaryKey(id)
 }
 
-enum class MonitorType {
-    TEXT, // 文本
-    NUMBER, // 数值
-    PERCENTAGE, // 百分比
-    BOOL, // 布尔类型
-    TIME, // 时间类型 （时间戳）
+enum class MonitorType(val description: String) {
+    TEXT("文本"), // 文本
+    NUMBER("数字"), // 数值
+    PERCENTAGE("百分比"), // 百分比
+    BOOL("布尔"), // 布尔类型
+    TIME("时间"), // 时间类型 （时间戳）
 }
 
 /**
