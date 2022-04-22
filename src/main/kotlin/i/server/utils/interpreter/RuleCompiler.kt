@@ -2,11 +2,12 @@ package i.server.utils.interpreter
 
 import java.util.LinkedList
 
-class RuleInterpreter(
+class RuleCompiler(
     role: String,
 ) {
 
     private val syntaxTree: RuleTree
+    private val expressions: List<ExecuteExpression>
 
     enum class ItemType {
         VAR, CONST, EXP, FUNC,
@@ -16,51 +17,96 @@ class RuleInterpreter(
         val grammars = getGrammar(role)
         semanticCheck(grammars)
         syntaxTree = loadSyntaxTree(grammars)
-        println(syntaxTree)
-        println(getVariable(syntaxTree))
-        println(getExecute(syntaxTree).joinToString("\r\n"))
+        expressions = loadInstruction(syntaxTree)
+        println(expressions.joinToString("\r\n"))
     }
 
-    private fun getExecute(syntaxTree: RuleTree): List<String> {
-        var id: Int = 0
-        val linkedList: LinkedList<String> = LinkedList()
+    enum class ExecuteExpType {
+        VAR, CONST, CONTEXT
+    }
+
+    /**
+     * 四元式
+     */
+    data class ExecuteExpression(
+        val id: String,
+        val left: Pair<String, ExecuteExpType>,
+        val right: Pair<String, ExecuteExpType>,
+        val exp: String
+    ) {
+        override fun toString() = "#$id: ${format(left)} $exp ${format(right)}"
+        private fun format(data: Pair<String, ExecuteExpType>): String {
+            return when (data.second) {
+                ExecuteExpType.VAR -> "\$${data.first}"
+                ExecuteExpType.CONST -> "'${data.first}'"
+                ExecuteExpType.CONTEXT -> "#${data.first}"
+            }
+        }
+    }
+
+    fun build(): RuleRunner {
+        return RuleRunner(this.syntaxTree, this.expressions)
+    }
+
+    /**
+     *  计算执行指令
+     */
+    private fun loadInstruction(syntaxTree: RuleTree): List<ExecuteExpression> {
+        var id = 0
+        fun RuleTreeData.format(): Pair<String, ExecuteExpType> {
+            if (this is VarRuleTreeData) {
+                return Pair(variable, ExecuteExpType.VAR)
+            } else if (this is ConstRuleTreeData) {
+                return Pair(data, ExecuteExpType.CONST)
+            }
+            throw RuleBuildException("未知错误")
+        }
+
+        val linkedList: LinkedList<ExecuteExpression> = LinkedList()
         fun internalExecute(syntaxTree: RuleTree): Int {
             if (syntaxTree.left !is FuncRuleTreeData && syntaxTree.right !is FuncRuleTreeData) {
-                linkedList.addFirst("#${++id} : ${syntaxTree.left} ${syntaxTree.expr} ${syntaxTree.right}")
+                linkedList.addFirst(
+                    ExecuteExpression(
+                        "${++id}", syntaxTree.left.format(), syntaxTree.right.format(), syntaxTree.expr
+                    )
+                )
                 return id
             } else if (syntaxTree.left is FuncRuleTreeData && syntaxTree.right is FuncRuleTreeData) {
-                val id1 = internalExecute(syntaxTree.left.tree)
-                val id2 = internalExecute(syntaxTree.right.tree)
-                linkedList.addLast("#${++id} : #$id1 ${syntaxTree.expr} #$id2")
+                val id1 = internalExecute(syntaxTree.left.tree).toString()
+                val id2 = internalExecute(syntaxTree.right.tree).toString()
+                linkedList.addLast(
+                    ExecuteExpression(
+                        "${++id}", Pair(id1, ExecuteExpType.CONTEXT), Pair(id2, ExecuteExpType.CONTEXT), syntaxTree.expr
+                    )
+                )
                 return id
             } else if (syntaxTree.left is FuncRuleTreeData) {
-                val id1 = internalExecute(syntaxTree.left.tree)
-                linkedList.addLast("#${++id} : #$id1 ${syntaxTree.expr} ${syntaxTree.right}")
+                val id1 = internalExecute(syntaxTree.left.tree).toString()
+                linkedList.addLast(
+                    ExecuteExpression(
+                        "${++id}", Pair(id1, ExecuteExpType.CONTEXT), syntaxTree.right.format(), syntaxTree.expr
+                    )
+                )
                 return id
             } else if (syntaxTree.right is FuncRuleTreeData) {
-                val id2 = internalExecute(syntaxTree.right.tree)
-                linkedList.addLast("#${++id} : ${syntaxTree.left} ${syntaxTree.expr} #$id2")
+                val id2 = internalExecute(syntaxTree.right.tree).toString()
+                linkedList.addLast(
+                    ExecuteExpression(
+                        "${++id}", syntaxTree.left.format(), Pair(id2, ExecuteExpType.CONTEXT), syntaxTree.expr
+                    )
+                )
                 return id
             } else {
                 throw RuleBuildException("未知错误")
             }
         }
         internalExecute(syntaxTree)
-        return linkedList.sorted()
+        return linkedList.sortedBy { it.id }
     }
 
-    private fun getVariable(syntaxTree: RuleTree, container: MutableSet<String> = hashSetOf()): Set<String> {
-        arrayOf(syntaxTree.left, syntaxTree.right).forEach {
-            if (it is VarRuleTreeData) {
-                container.add(it.variable)
-            }
-            if (it is FuncRuleTreeData) {
-                getVariable(it.tree, container)
-            }
-        }
-        return container
-    }
-
+    /**
+     * 语法树
+     */
     data class RuleTree(
         val left: RuleTreeData,
         val expr: String,
@@ -89,8 +135,7 @@ class RuleInterpreter(
     private fun <D : Pair<ItemType, Any>> List<D>.covert(): RuleTreeData {
         return if (size == 1) {
             val first = first()
-            @Suppress("UNCHECKED_CAST")
-            when (first.first) {
+            @Suppress("UNCHECKED_CAST") when (first.first) {
                 ItemType.VAR -> VarRuleTreeData(first.second as String)
                 ItemType.CONST -> ConstRuleTreeData(first.second as String)
                 ItemType.FUNC -> {
@@ -122,7 +167,7 @@ class RuleInterpreter(
             return RuleTree(grammars.covert(), "", EmptyRuleTreeData())
         }
         val data = operators.firstNotNullOf { exp ->
-            grammars.withIndex().firstOrNull() {
+            grammars.withIndex().firstOrNull {
                 it.value.first == ItemType.EXP && it.value.second.toString() == exp
             }
         }
@@ -148,7 +193,7 @@ class RuleInterpreter(
             throw RuleBuildException("${grammars.last().second}  应为变量或函数体.")
         }
         grammars.filter { it.first == ItemType.VAR }.map { it.second }.forEach { // 变量命名检查
-            if ((it as String).contains(Regex("^[a-zA-Z][_\\\\.a-zA-Z0-9]+\$")).not()) {
+            if ((it as String).contains(Regex("^[a-zA-Z][_\\\\.a-zA-Z\\d]+\$")).not()) {
                 throw RuleBuildException("变量 $it 不符合命名要求.")
             }
         }
@@ -246,11 +291,13 @@ class RuleInterpreter(
 
     companion object {
 
-        private val operators = arrayListOf("OR", "or", "AND", "and", "=", "+", "-", "*", "/", "%")
+        private val operators =
+            arrayListOf("OR", "or", "AND", "and", ">=", "<=", "=", ">", "<", "+", "-", "*", "/", "%")
 
         @JvmStatic
         fun main(args: Array<String>) {
-            RuleInterpreter("(user.id + user.name + '') AND ( asa + ( ((( 'data' * asa ))) + '12' ) )")
+            RuleCompiler("('daad' + 'daad' + '') AND ( asa + ( ((( 'data' * asa ))) + '12' ) )")
+                .build()
         }
     }
 }
