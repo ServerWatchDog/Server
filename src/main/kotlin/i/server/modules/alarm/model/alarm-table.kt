@@ -1,34 +1,35 @@
 package i.server.modules.alarm.model
 
 import i.server.modules.client.model.ClientTable
-import i.server.modules.message.model.MessageSendTargetTable
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IdTable
+import i.server.modules.monitor.model.MonitorTypeTable
+import i.server.utils.comment
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.javatime.CurrentDateTime
-import org.jetbrains.exposed.sql.javatime.datetime
+import org.jetbrains.exposed.sql.Table
 
-/**
- * 异常报警通知规则
- */
-object AlarmRoleTable : IdTable<String>("t_alarm_role") {
-    override val id: Column<EntityID<String>> = varchar("id", 64).uniqueIndex().entityId()
-    val description = varchar("description", 128)
-
-    override val primaryKey = PrimaryKey(id)
+object AlarmRuleGroupTable : IntIdTable("t_alarm_rule_group") {
+    val name = varchar("name", 128).uniqueIndex()
+    val description = varchar("description", 255)
 }
 
-/**
- * 异常指标规则
- */
-object AlarmRoleMonitorTable : IntIdTable("t_alarm_monitor") {
-    val duration = AlarmRoleTable.long("duration_time")
+object AlarmRoleGroupLinkTable : Table("t_alarm_rule_group_link") {
+    val alarm = reference("alarm", AlarmRuleTable)
+    val group = reference("group", AlarmRuleGroupTable)
+    override val primaryKey = PrimaryKey(alarm, group)
 }
 
-object AlarmRoleBindTable : IntIdTable("t_alarm_role_bind_client") {
-    val alarmRole = reference("alarm_role", AlarmRoleTable)
+object AlarmRuleTable : IntIdTable("t_alarm_rule") {
+    val name = varchar("name", 255).uniqueIndex().comment("规则名称")
+    val expression = varchar("expression", 512).comment("规则表达式")
+}
+
+object AlarmRuleDependsTable : Table("t_alarm_rule_linked_monitor") {
+    val alarm = reference("alarm", AlarmRuleTable)
+    val monitor = reference("monitor_type", MonitorTypeTable)
+    override val primaryKey = PrimaryKey(alarm, monitor)
+}
+
+object ClientAlarmRuleTable : Table("t_alarm_rule_link_client") {
+    val alarm = reference("alarm", AlarmRuleTable)
     val client = reference("client", ClientTable)
-    val createTime = datetime("create_time").defaultExpression(CurrentDateTime())
-    val notificationTarget = reference("notification_target", MessageSendTargetTable)
+    override val primaryKey = PrimaryKey(alarm, client)
 }

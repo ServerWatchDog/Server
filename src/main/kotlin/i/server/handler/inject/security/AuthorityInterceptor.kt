@@ -64,7 +64,7 @@ class AuthorityInterceptor(
         if (authService.verify(token, permission.permissions).not()) {
             logger.debug(
                 "Token 权限问题或已经过期. 路径：{} 需要 {} 权限.",
-                request.contextPath, permission.permissions
+                request.contextPath.toString(), permission.permissions.joinToString()
             )
             throw ForbiddenException("token 没有权限或已过期！")
         }

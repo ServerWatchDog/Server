@@ -5,12 +5,14 @@ import i.server.modules.config.services.SoftInfoService
 import i.server.modules.log.model.ClientLogItemTable
 import i.server.modules.log.model.ClientLogTable
 import i.server.modules.log.service.ILogCollectionService
+import i.server.modules.monitor.model.MonitorType
 import i.server.modules.monitor.service.IClientMonitorTypeService
 import i.server.utils.autoRollback
 import jakarta.annotation.PreDestroy
 import org.d7z.light.db.api.LightDB
 import org.d7z.logger4k.core.utils.getLogger
 import org.d7z.objects.format.api.IDataCovert
+import org.d7z.objects.format.utils.reduce
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
@@ -49,13 +51,13 @@ class LogCollectionServiceImpl(
                     it[createTime] = LocalDateTime.now()
                 }.value
                 db["client-monitor"]
-                    .map { d -> d.split(";") }
+                    .map { d -> dataCovert.reduce<Map<String, MonitorType>>(d) }
                     .orElseGet { clientMonitorService.getClientMonitor(clientId) }
                     .forEach { id ->
-                        db["monitor.$id"].ifPresent { value ->
+                        db["monitor.${id.key}"].ifPresent { value ->
                             ClientLogItemTable.insert {
                                 it[clientLog] = logItemId
-                                it[type] = id
+                                it[type] = id.key
                                 it[ClientLogItemTable.value] = value
                             }
                         }

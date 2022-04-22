@@ -4,10 +4,13 @@ import i.server.modules.agent.model.AgentPushResultView
 import i.server.modules.agent.model.AgentPushView
 import i.server.modules.agent.model.ClientSessionData
 import i.server.modules.agent.service.IAgentPushService
+import i.server.modules.monitor.model.MonitorType
 import i.server.modules.monitor.service.IClientMonitorTypeService
+import i.server.utils.BadRequestException
 import org.d7z.light.db.api.LightDB
 import org.d7z.light.db.modules.session.api.ISessionContext
 import org.d7z.objects.format.api.IDataCovert
+import org.d7z.objects.format.utils.reduce
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -26,12 +29,20 @@ class AgentPushServiceImpl(
         }.apply {
             val supportTypes = this["monitor.types"].orElseGet {
                 refresh = true
-                val joinToString = clientMonitorService.getClientMonitor(sessionData.clientId).joinToString(";")
-                this.put("monitor.types", joinToString)
-                joinToString
-            }.split(";")
-            push.data.filter { supportTypes.contains(it.key) }.forEach { (t, u) ->
-                this.put("monitor.$t", u)
+                val typesCache = dataCovert.format(clientMonitorService.getClientMonitor(sessionData.clientId))
+                this.put("monitor.types", typesCache)
+                typesCache
+            }.let { dataCovert.reduce<Map<String, MonitorType>>(it) }
+            push.data.filter { supportTypes.containsKey(it.key) }.map {
+                it.key to (it.value to supportTypes[it.key]!!)
+            }.forEach { (t, u) ->
+                if (u.second.check.check(u.first)) {
+                    this.put("monitor.$t", u.first)
+                    this.put("monitor.$t.type", u.second.name)
+                    this.put("monitor.$t.date", dataCovert.format(LocalDateTime.now(), LocalDateTime::class))
+                } else {
+                    throw BadRequestException("消息推送的格式不规范，数据 '${u.first}' 不是 '${u.second} 可用的格式.'")
+                }
             }
             this.put("push_time", dataCovert.format(LocalDateTime.now())) // 标记推送时间
         }

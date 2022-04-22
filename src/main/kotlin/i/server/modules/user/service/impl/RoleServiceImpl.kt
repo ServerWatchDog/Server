@@ -9,6 +9,8 @@ import i.server.modules.user.model.RolesTable
 import i.server.modules.user.model.UserLinkRoleTable
 import i.server.modules.user.model.UsersTable
 import i.server.modules.user.service.IRoleService
+import i.server.utils.autoRollback
+import i.server.utils.template.SimpleView
 import i.server.utils.template.crud.CRUDServiceImpl
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.batchInsert
@@ -73,5 +75,15 @@ class RoleServiceImpl : CRUDServiceImpl<RoleView, RoleResultView, Int, RolesTabl
             }
         }
         insertAfterHook(id, input)
+    }
+
+    override fun delete(id: Int): SimpleView<Boolean> = autoRollback {
+        UserLinkRoleTable.deleteWhere {
+            UserLinkRoleTable.role eq id
+        }
+        PermissionsLinkRoleTable.deleteWhere {
+            PermissionsLinkRoleTable.role eq id
+        }
+        super.delete(id)
     }
 }

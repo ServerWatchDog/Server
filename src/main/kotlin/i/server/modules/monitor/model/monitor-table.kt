@@ -4,6 +4,8 @@ import i.server.modules.client.model.ClientTable
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Table
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * 监控的指标归组
@@ -22,12 +24,56 @@ object MonitorTypeTable : IdTable<String>("t_monitor_type") {
     override val primaryKey = PrimaryKey(id)
 }
 
-enum class MonitorType(val description: String) {
-    TEXT("文本"), // 文本
-    NUMBER("数字"), // 数值
-    PERCENTAGE("百分比"), // 百分比
-    BOOL("布尔"), // 布尔类型
-    TIME("时间"), // 时间类型 （时间戳）
+enum class MonitorType(val description: String, val check: TypeCheck) {
+    TEXT(
+        "文本",
+        object : TypeCheck {
+            override fun check(data: String) = true
+        }
+    ), // 文本
+    NUMBER(
+        "数字",
+        object : TypeCheck {
+            override fun check(data: String): Boolean {
+                data.toLongOrNull() ?: data.toDoubleOrNull() ?: return false
+                return true
+            }
+        }
+    ),
+    PERCENTAGE(
+        "百分比",
+        object : TypeCheck {
+            override fun check(data: String): Boolean {
+                val d = data.toDoubleOrNull() ?: return false
+                return d in 0.0..1.0
+            }
+        }
+    ),
+    BOOL(
+        "布尔",
+        object : TypeCheck {
+            override fun check(data: String): Boolean {
+                data.toBooleanStrictOrNull() ?: return false
+                return true
+            }
+        }
+    ), // 布尔类型
+    TIME(
+        "时间",
+        object : TypeCheck {
+            private val dataFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+            override fun check(data: String) = try {
+                LocalDateTime.parse(data, dataFormat)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+    ), // 时间类型 （时间戳）
+}
+
+interface TypeCheck {
+    fun check(data: String): Boolean
 }
 
 /**
