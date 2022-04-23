@@ -5,4 +5,5 @@ enum class RuleDataType {
     TEXT,
     BOOL,
     TIME,
+    ANY,
 }

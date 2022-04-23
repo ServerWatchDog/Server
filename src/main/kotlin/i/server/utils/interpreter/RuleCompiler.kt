@@ -5,94 +5,199 @@ import java.util.LinkedList
 class RuleCompiler(
     role: String,
 ) {
-
-    private val syntaxTree: RuleTree
+    /**
+     * 执行算法
+     */
     private val expressions: List<ExecuteExpression>
 
-    enum class ItemType {
-        VAR, CONST, EXP, FUNC,
-    }
+    private val syntaxTree: RuleTree
 
     init {
-        val grammars = getGrammar(role)
-        semanticCheck(grammars)
-        syntaxTree = loadSyntaxTree(grammars)
-        expressions = loadInstruction(syntaxTree)
-        println(expressions.joinToString("\r\n"))
+        val grammars = getGrammar(role) // 语法分析
+        semanticCheck(grammars) // 语法检查
+        syntaxTree = loadSyntaxTree(grammars) // 构建语法树
+        expressions = loadInstruction(syntaxTree) // 构建四元表达式
+        while (true) { // 优化算法
+            if (optimization(expressions)) {
+                break
+            }
+        }
     }
 
-    enum class ExecuteExpType {
-        VAR, CONST, CONTEXT
+    /**
+     * 优化算法
+     */
+    private fun optimization(expressions: MutableList<ExecuteExpression>): Boolean {
+        val map = hashMapOf<Int, ConstExecuteVariable>()
+        expressions.forEach {
+            if (it.left is ConstExecuteVariable && it.right is ConstExecuteVariable) {
+                if (it.left.type != it.right.type) {
+                    throw RuleBuildException("语法错误：$it 左右类型不一致.")
+                }
+                it.returnType = it.exp.execute.tryExecute(it.left.type)
+                map[it.id] = it.exp.execute.execute(it.left.data, it.right.data, it.left.type)
+            }
+        }
+        val copy = expressions.map { it }.toList()
+        expressions.removeIf { it.id in map.keys }
+        if (expressions.isEmpty()) {
+            expressions.addAll(copy)
+            return true
+        }
+        for ((index, data) in expressions.withIndex()) {
+            if (data.left is ContextExecuteVariable && data.left.lastId in map.keys &&
+                data.right is ContextExecuteVariable && data.right.lastId in map.keys
+            ) {
+                expressions[index] = ExecuteExpression(
+                    id = data.id,
+                    left = map[data.left.lastId]!!,
+                    right = map[data.right.lastId]!!,
+                    exp = data.exp
+                )
+            } else if (data.left is ContextExecuteVariable && data.left.lastId in map.keys) {
+                expressions[index] = ExecuteExpression(
+                    id = data.id,
+                    left = map[data.left.lastId]!!,
+                    right = data.right,
+                    exp = data.exp
+                )
+            } else if (data.right is ContextExecuteVariable && data.right.lastId in map.keys) {
+                expressions[index] = ExecuteExpression(
+                    id = data.id,
+                    left = data.left,
+                    right = map[data.right.lastId]!!,
+                    exp = data.exp
+                )
+            }
+        }
+        if (map.isNotEmpty()) {
+            return false
+        }
+        return true
+    }
+
+    override fun toString(): String {
+        return """
+            tree: $syntaxTree
+            build:
+            ${expressions.joinToString("\r\n")}
+        """.lines().joinToString("\r\n") { it.trim() }.trim()
     }
 
     /**
      * 四元式
      */
     data class ExecuteExpression(
-        val id: String,
-        val left: Pair<String, ExecuteExpType>,
-        val right: Pair<String, ExecuteExpType>,
-        val exp: String
+        val id: Int,
+        val left: IExecuteVariable,
+        val right: IExecuteVariable,
+        val exp: RuleOperator
     ) {
-        override fun toString() = "#$id: ${format(left)} $exp ${format(right)}"
-        private fun format(data: Pair<String, ExecuteExpType>): String {
-            return when (data.second) {
-                ExecuteExpType.VAR -> "\$${data.first}"
-                ExecuteExpType.CONST -> "'${data.first}'"
-                ExecuteExpType.CONTEXT -> "#${data.first}"
+        var returnType: RuleDataType = RuleDataType.ANY
+        override fun toString() =
+            "#${String.format("%02d", id)}: ${format(left)} ${
+            String.format(
+                "%-5s",
+                exp.opera[0]
+            )
+            } ${format(right)}   = ${
+            String.format(
+                "%-15s",
+                "$returnType(?)"
+            )
+            }"
+
+        private fun format(data: IExecuteVariable): String {
+            return when (data) {
+                is VariableExecuteVariable -> "${data.type}(\$${data.name})"
+                is ConstExecuteVariable -> "${data.type}('${data.data}')"
+                is ContextExecuteVariable -> "#${String.format("%02d", data.lastId)}"
+                else -> throw RuleBuildException("未知错误！")
+            }.let {
+                String.format("%-15s", it)
             }
         }
     }
 
+    interface IExecuteVariable
+    data class ConstExecuteVariable(val data: String, override var type: RuleDataType) :
+        IExecuteVariable,
+        DataTypeUpdater {
+        override fun toString() = "$type('$data')"
+    }
+
+    data class VariableExecuteVariable(val name: String, override var type: RuleDataType) :
+        IExecuteVariable,
+        DataTypeUpdater
+
+    data class ContextExecuteVariable(val lastId: Int) : IExecuteVariable
+
+    interface DataTypeUpdater {
+        var type: RuleDataType
+    }
+
     fun build(): RuleRunner {
-        return RuleRunner(this.syntaxTree, this.expressions)
+        return RuleRunner(this.expressions)
     }
 
     /**
      *  计算执行指令
      */
-    private fun loadInstruction(syntaxTree: RuleTree): List<ExecuteExpression> {
+    private fun loadInstruction(syntaxTree: RuleTree): MutableList<ExecuteExpression> {
         var id = 0
-        fun RuleTreeData.format(): Pair<String, ExecuteExpType> {
-            if (this is VarRuleTreeData) {
-                return Pair(variable, ExecuteExpType.VAR)
-            } else if (this is ConstRuleTreeData) {
-                return Pair(data, ExecuteExpType.CONST)
-            }
-            throw RuleBuildException("未知错误")
-        }
 
         val linkedList: LinkedList<ExecuteExpression> = LinkedList()
         fun internalExecute(syntaxTree: RuleTree): Int {
-            if (syntaxTree.left !is FuncRuleTreeData && syntaxTree.right !is FuncRuleTreeData) {
+            fun IChildTree.format(): IExecuteVariable {
+                return when (this) {
+                    is ConstChildTree -> ConstExecuteVariable(data, type)
+                    is VariableChildTree -> VariableExecuteVariable(name, type)
+                    else -> throw RuleBuildException("未知错误！")
+                }
+            }
+            if (syntaxTree.right is EmptyChildTree) {
                 linkedList.addFirst(
                     ExecuteExpression(
-                        "${++id}", syntaxTree.left.format(), syntaxTree.right.format(), syntaxTree.expr
+                        ++id, syntaxTree.left.format(), syntaxTree.left.format(), RuleOperator.COPY_LEFT
                     )
                 )
                 return id
-            } else if (syntaxTree.left is FuncRuleTreeData && syntaxTree.right is FuncRuleTreeData) {
-                val id1 = internalExecute(syntaxTree.left.tree).toString()
-                val id2 = internalExecute(syntaxTree.right.tree).toString()
-                linkedList.addLast(
+            } else if (syntaxTree.left is EmptyChildTree) {
+                linkedList.addFirst(
                     ExecuteExpression(
-                        "${++id}", Pair(id1, ExecuteExpType.CONTEXT), Pair(id2, ExecuteExpType.CONTEXT), syntaxTree.expr
+                        ++id, syntaxTree.right.format(), syntaxTree.right.format(), RuleOperator.COPY_LEFT
                     )
                 )
                 return id
-            } else if (syntaxTree.left is FuncRuleTreeData) {
-                val id1 = internalExecute(syntaxTree.left.tree).toString()
-                linkedList.addLast(
+            } else if (syntaxTree.left !is FunChildTree && syntaxTree.right !is FunChildTree) {
+                linkedList.addFirst(
                     ExecuteExpression(
-                        "${++id}", Pair(id1, ExecuteExpType.CONTEXT), syntaxTree.right.format(), syntaxTree.expr
+                        ++id, syntaxTree.left.format(), syntaxTree.right.format(), syntaxTree.expr
                     )
                 )
                 return id
-            } else if (syntaxTree.right is FuncRuleTreeData) {
-                val id2 = internalExecute(syntaxTree.right.tree).toString()
+            } else if (syntaxTree.left is FunChildTree && syntaxTree.right is FunChildTree) {
+                val id1 = internalExecute(syntaxTree.left.child)
+                val id2 = internalExecute(syntaxTree.right.child)
                 linkedList.addLast(
                     ExecuteExpression(
-                        "${++id}", syntaxTree.left.format(), Pair(id2, ExecuteExpType.CONTEXT), syntaxTree.expr
+                        ++id, ContextExecuteVariable(id1), ContextExecuteVariable(id2), syntaxTree.expr
+                    )
+                )
+                return id
+            } else if (syntaxTree.left is FunChildTree) {
+                val id1 = internalExecute(syntaxTree.left.child)
+                linkedList.addLast(
+                    ExecuteExpression(
+                        ++id, ContextExecuteVariable(id1), syntaxTree.right.format(), syntaxTree.expr
+                    )
+                )
+                return id
+            } else if (syntaxTree.right is FunChildTree) {
+                val id2 = internalExecute(syntaxTree.right.child)
+                linkedList.addLast(
+                    ExecuteExpression(
+                        ++id, syntaxTree.left.format(), ContextExecuteVariable(id2), syntaxTree.expr
                     )
                 )
                 return id
@@ -101,111 +206,125 @@ class RuleCompiler(
             }
         }
         internalExecute(syntaxTree)
-        return linkedList.sortedBy { it.id }
+        linkedList.sortBy { it.id }
+        return linkedList
     }
 
     /**
      * 语法树
      */
     data class RuleTree(
-        val left: RuleTreeData,
-        val expr: String,
-        val right: RuleTreeData,
+        val left: IChildTree,
+        val expr: RuleOperator,
+        val right: IChildTree,
     ) {
-        override fun toString() = "$left $expr $right"
+        override fun toString() = "$left ${expr.opera[0]} $right"
     }
 
-    interface RuleTreeData
-    class EmptyRuleTreeData : RuleTreeData {
-        override fun toString() = ""
+    /**
+     * 语法树标记
+     */
+    interface IChildTree
+    data class ConstChildTree(val data: String, var type: RuleDataType) : IChildTree {
+        override fun toString() = "$type('$data')"
     }
 
-    data class FuncRuleTreeData(val tree: RuleTree) : RuleTreeData {
-        override fun toString() = "( $tree )"
+    data class VariableChildTree(val name: String, var type: RuleDataType) : IChildTree {
+        override fun toString() = "$type(\$$name)"
     }
 
-    data class VarRuleTreeData(val variable: String) : RuleTreeData {
-        override fun toString() = variable
+    data class FunChildTree(val child: RuleTree) : IChildTree {
+        override fun toString() = "( $child )"
     }
 
-    data class ConstRuleTreeData(val data: String) : RuleTreeData {
-        override fun toString() = "\'$data\'"
-    }
+    class EmptyChildTree : IChildTree
 
-    private fun <D : Pair<ItemType, Any>> List<D>.covert(): RuleTreeData {
+    private fun <D : Grammar> List<D>.covert(): IChildTree {
         return if (size == 1) {
-            val first = first()
-            @Suppress("UNCHECKED_CAST") when (first.first) {
-                ItemType.VAR -> VarRuleTreeData(first.second as String)
-                ItemType.CONST -> ConstRuleTreeData(first.second as String)
-                ItemType.FUNC -> {
-                    val tree = loadSyntaxTree(first.second as List<Pair<ItemType, Any>>) // 优化嵌套
-                    if (tree.left is EmptyRuleTreeData && tree.right !is EmptyRuleTreeData) {
+            when (val data = first()) {
+                is VarGrammar -> {
+                    VariableChildTree(data.name, data.type)
+                }
+                is ConstGrammar -> {
+                    ConstChildTree(data.data, data.type)
+                }
+                is FuncGrammar -> {
+                    val tree = loadSyntaxTree(data.child) // 优化嵌套
+                    if (tree.left is EmptyChildTree && tree.right !is EmptyChildTree) {
                         tree.right
-                    } else if (tree.right is EmptyRuleTreeData && tree.left !is EmptyRuleTreeData) {
+                    } else if (tree.right is EmptyChildTree && tree.left !is EmptyChildTree) {
                         tree.left
                     } else {
-                        FuncRuleTreeData(tree)
+                        FunChildTree(tree)
                     }
                 }
                 else -> throw RuleBuildException("未知错误")
             }
         } else {
             val childTree = loadSyntaxTree(this) // 优化嵌套
-            if (childTree.left is EmptyRuleTreeData && childTree.right !is EmptyRuleTreeData) {
+            if (childTree.left is EmptyChildTree && childTree.right !is EmptyChildTree) {
                 childTree.right
-            } else if (childTree.right is EmptyRuleTreeData && childTree.left !is EmptyRuleTreeData) {
+            } else if (childTree.right is EmptyChildTree && childTree.left !is EmptyChildTree) {
                 childTree.left
             } else {
-                FuncRuleTreeData(childTree)
+                FunChildTree(childTree)
             }
         }
     }
 
-    private fun loadSyntaxTree(grammars: List<Pair<ItemType, Any>>): RuleTree {
+    private fun loadSyntaxTree(grammars: List<Grammar>): RuleTree {
         if (grammars.size == 1) {
-            return RuleTree(grammars.covert(), "", EmptyRuleTreeData())
+            return RuleTree(grammars.covert(), RuleOperator.ADD, EmptyChildTree())
         }
         val data = operators.firstNotNullOf { exp ->
             grammars.withIndex().firstOrNull {
-                it.value.first == ItemType.EXP && it.value.second.toString() == exp
+                it.value is ExpGrammar && (it.value as ExpGrammar).data == exp
             }
         }
         val leftList = grammars.subList(0, data.index).covert()
         val rightList = grammars.subList(data.index + 1, grammars.size).covert()
-        return RuleTree(leftList, (data.value.second as String).uppercase(), rightList)
+        return RuleTree(leftList, operatorMap[(data.value as ExpGrammar).data]!!, rightList)
     }
 
     /**
      * 语法检查器
      */
-    @Suppress("UNCHECKED_CAST")
-    private fun semanticCheck(grammars: List<Pair<ItemType, Any>>) {
+    private fun semanticCheck(grammars: List<Grammar>) {
         for (pairs in grammars.windowed(2, 2, false)) { // 语法检查
-            if (pairs.first().first !in arrayOf(ItemType.VAR, ItemType.CONST, ItemType.FUNC)) {
-                throw RuleBuildException("${pairs.first().second}  应为变量或函数体.")
+            if (pairs.first()::class !in arrayOf(VarGrammar::class, ConstGrammar::class, FuncGrammar::class)) {
+                throw RuleBuildException("${pairs.first()}  应为变量或函数体.")
             }
-            if (pairs.last().first != ItemType.EXP) {
-                throw RuleBuildException("${pairs.last().second}  应为运算规则.")
+            if (pairs.last()::class != ExpGrammar::class) {
+                throw RuleBuildException("${pairs.last()}  应为运算符.")
             }
         }
-        if (grammars.last().first !in arrayOf(ItemType.VAR, ItemType.CONST, ItemType.FUNC)) {
-            throw RuleBuildException("${grammars.last().second}  应为变量或函数体.")
+        if (grammars.last()::class !in arrayOf(VarGrammar::class, ConstGrammar::class, FuncGrammar::class)) {
+            throw RuleBuildException("${grammars.last()}  应为变量或函数体.")
         }
-        grammars.filter { it.first == ItemType.VAR }.map { it.second }.forEach { // 变量命名检查
-            if ((it as String).contains(Regex("^[a-zA-Z][_\\\\.a-zA-Z\\d]+\$")).not()) {
+        grammars.filterIsInstance<VarGrammar>().forEach { // 变量命名检查
+            if (it.name.contains(Regex("^[a-zA-Z][_\\\\.a-zA-Z\\d]+\$")).not()) {
                 throw RuleBuildException("变量 $it 不符合命名要求.")
             }
         }
-        grammars.filter { it.first == ItemType.FUNC }.map { it.second }.forEach { // 子函数体检查
-            semanticCheck(it as List<Pair<ItemType, Any>>)
+        grammars.filterIsInstance<FuncGrammar>().forEach { // 子函数体检查
+            semanticCheck(it.child)
         }
     }
 
     /**
+     * 原语标记
+     */
+    interface Grammar
+
+    data class VarGrammar(val name: String, var type: RuleDataType = RuleDataType.ANY) : Grammar
+    data class ConstGrammar(val data: String, val type: RuleDataType) : Grammar
+    data class ExpGrammar(val data: String) : Grammar
+    data class FuncGrammar(val child: List<Grammar>) : Grammar
+
+    /**
      * 获取解析后的语法
      */
-    private fun getGrammar(role: String): List<Pair<ItemType, Any>> {
+    private fun getGrammar(role: String): List<Grammar> {
         fun findNextOperator(data: String, offset: Int): IndexedValue<String> {
             var index = offset
             while (index < data.length) {
@@ -226,7 +345,7 @@ class RuleCompiler(
             return IndexedValue(-1, "")
         }
 
-        val grammar = LinkedList<Pair<ItemType, Any>>()
+        val grammar = LinkedList<Grammar>()
         if (role.isBlank()) {
             throw RuleBuildException("表达式为空，无法解析")
         }
@@ -238,7 +357,7 @@ class RuleCompiler(
                 if (last == -1) {
                     throw RuleBuildException("语法错误，无法找到常量结束符:${role.substring(pointer)}")
                 }
-                grammar.add(Pair(ItemType.CONST, role.substring(pointer + 1, last)))
+                grammar.add(ConstGrammar(role.substring(pointer + 1, last), RuleDataType.TEXT))
                 pointer = last + 1
             }
             if (current == '(') { // 函数查找
@@ -260,7 +379,7 @@ class RuleCompiler(
                 if (last == -1) {
                     throw RuleBuildException("语法错误，无法找到结束符')' :${role.substring(pointer)}")
                 }
-                grammar.add(Pair(ItemType.FUNC, getGrammar(role.substring(pointer + 1, last).trim())))
+                grammar.add(FuncGrammar(getGrammar(role.substring(pointer + 1, last).trim())))
                 pointer = last + 1
             }
             if (current in arrayOf(' ', '\r', '\n')) {
@@ -272,16 +391,24 @@ class RuleCompiler(
                 -1 -> {
                     val variable = role.substring(pointer).trim()
                     if (variable.isNotBlank()) {
-                        grammar.add(Pair(ItemType.VAR, variable))
+                        variable.toDoubleOrNull()?.let {
+                            grammar.add(ConstGrammar(variable, RuleDataType.NUMBER))
+                        } ?: variable.toBooleanStrictOrNull()?.let {
+                            grammar.add(ConstGrammar(variable, RuleDataType.BOOL))
+                        } ?: grammar.add(VarGrammar(variable, RuleDataType.ANY))
                     }
                     break
                 }
                 else -> {
                     val variable = role.substring(pointer, nextOperator.index).trim()
                     if (variable.isNotBlank()) {
-                        grammar.add(Pair(ItemType.VAR, variable))
+                        variable.toDoubleOrNull()?.let {
+                            grammar.add(ConstGrammar(variable, RuleDataType.NUMBER))
+                        } ?: variable.toBooleanStrictOrNull()?.let {
+                            grammar.add(ConstGrammar(variable, RuleDataType.BOOL))
+                        } ?: grammar.add(VarGrammar(variable, RuleDataType.ANY))
                     }
-                    grammar.add(Pair(ItemType.EXP, nextOperator.value))
+                    grammar.add(ExpGrammar(nextOperator.value))
                     pointer = nextOperator.index + nextOperator.value.length
                 }
             }
@@ -290,14 +417,10 @@ class RuleCompiler(
     }
 
     companion object {
-
-        private val operators =
-            arrayListOf("OR", "or", "AND", "and", ">=", "<=", "=", ">", "<", "+", "-", "*", "/", "%")
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            RuleCompiler("('daad' + 'daad' + '') AND ( asa + ( ((( 'data' * asa ))) + '12' ) )")
-                .build()
+        init {
         }
+
+        private val operatorMap = RuleOperator.values().flatMap { it.opera.map { name -> name to it } }.toMap()
+        private val operators = RuleOperator.values().flatMap { it.opera.toList() }.toList()
     }
 }

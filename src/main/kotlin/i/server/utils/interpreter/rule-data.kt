@@ -1,8 +1,8 @@
 package i.server.utils.interpreter
 
-class NumberRuleData private constructor(private val data: Long) : RuleData<Long> {
+class NumberRuleData private constructor(private val data: Double) : RuleData<Double> {
 
-    override fun <R : RuleData<Long>> calculate(other: R, operator: String): R {
+    override fun <R : RuleData<Double>> calculate(other: R, operator: String): R {
         TODO("Not yet implemented")
     }
 
@@ -10,21 +10,21 @@ class NumberRuleData private constructor(private val data: Long) : RuleData<Long
         TODO("Not yet implemented")
     }
 
-    override fun toJVMData(): Long {
+    override fun toJVMData(): Double {
         return data
     }
 
-    companion object : RuleDataBuilder<Long, NumberRuleData> {
+    companion object : RuleDataBuilder<Double, NumberRuleData> {
         override fun verify(data: String): Boolean {
-            data.toLongOrNull() ?: return false
+            data.toDoubleOrNull() ?: return false
             return true
         }
 
         override fun build(data: String): NumberRuleData {
-            return NumberRuleData(data.toLong())
+            return NumberRuleData(data.toDouble())
         }
 
-        override fun formJVM(jvmData: Long): RuleData<Long> {
+        override fun formJVM(jvmData: Double): RuleData<Double> {
             return NumberRuleData(jvmData)
         }
     }
@@ -56,6 +56,35 @@ class BooleanRuleData private constructor(private val data: Boolean) : RuleData<
 
         override fun formJVM(jvmData: Boolean): RuleData<Boolean> {
             return BooleanRuleData(jvmData)
+        }
+    }
+}
+
+class TextRuleData private constructor(private val data: String) : RuleData<String> {
+
+    override fun <R : RuleData<String>> calculate(other: R, operator: String): R {
+        TODO("Not yet implemented")
+    }
+
+    override fun tryCalculate(operator: String): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun toJVMData(): String {
+        return data
+    }
+
+    companion object : RuleDataBuilder<String, TextRuleData> {
+        override fun verify(data: String): Boolean {
+            return true
+        }
+
+        override fun build(data: String): TextRuleData {
+            return TextRuleData(data)
+        }
+
+        override fun formJVM(jvmData: String): TextRuleData {
+            return TextRuleData(jvmData)
         }
     }
 }
