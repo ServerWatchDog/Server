@@ -11,7 +11,7 @@ object AlarmRuleGroupTable : IntIdTable("t_alarm_rule_group") {
     val description = varchar("description", 255)
 }
 
-object AlarmRoleGroupLinkTable : Table("t_alarm_rule_group_link") {
+object AlarmRoleGroupLinkTable : Table("t_alarm_rule_link_group") {
     val alarm = reference("alarm", AlarmRuleTable)
     val group = reference("group", AlarmRuleGroupTable)
     override val primaryKey = PrimaryKey(alarm, group)
@@ -19,7 +19,7 @@ object AlarmRoleGroupLinkTable : Table("t_alarm_rule_group_link") {
 
 object AlarmRuleTable : IntIdTable("t_alarm_rule") {
     val name = varchar("name", 255).uniqueIndex().comment("规则名称")
-    val expression = varchar("expression", 512).comment("规则表达式")
+    val expression = varchar("expression", 1024).comment("规则表达式")
 }
 
 object AlarmRuleDependsTable : Table("t_alarm_rule_linked_monitor") {

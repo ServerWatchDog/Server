@@ -1,6 +1,7 @@
 package i.server.modules.monitor.model
 
 import i.server.modules.client.model.ClientTable
+import i.server.utils.interpreter.RuleDataType
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Table
@@ -24,12 +25,13 @@ object MonitorTypeTable : IdTable<String>("t_monitor_type") {
     override val primaryKey = PrimaryKey(id)
 }
 
-enum class MonitorType(val description: String, val check: TypeCheck) {
+enum class MonitorType(val description: String, val check: TypeCheck, val alias: RuleDataType) {
     TEXT(
         "文本",
         object : TypeCheck {
             override fun check(data: String) = true
-        }
+        },
+        RuleDataType.TEXT
     ), // 文本
     NUMBER(
         "数字",
@@ -38,16 +40,8 @@ enum class MonitorType(val description: String, val check: TypeCheck) {
                 data.toLongOrNull() ?: data.toDoubleOrNull() ?: return false
                 return true
             }
-        }
-    ),
-    PERCENTAGE(
-        "百分比",
-        object : TypeCheck {
-            override fun check(data: String): Boolean {
-                val d = data.toDoubleOrNull() ?: return false
-                return d in 0.0..1.0
-            }
-        }
+        },
+        RuleDataType.NUMBER
     ),
     BOOL(
         "布尔",
@@ -56,7 +50,8 @@ enum class MonitorType(val description: String, val check: TypeCheck) {
                 data.toBooleanStrictOrNull() ?: return false
                 return true
             }
-        }
+        },
+        RuleDataType.BOOL
     ), // 布尔类型
     TIME(
         "时间",
@@ -68,8 +63,9 @@ enum class MonitorType(val description: String, val check: TypeCheck) {
             } catch (e: Exception) {
                 false
             }
-        }
-    ), // 时间类型 （时间戳）
+        },
+        RuleDataType.TIME
+    ), // 时间类型
 }
 
 interface TypeCheck {

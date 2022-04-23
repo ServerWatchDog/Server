@@ -30,6 +30,12 @@ interface CRUDServiceImpl<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID
     fun ResultRow.updateAfterHook(id: ID, input: IN) {
     }
 
+    fun dataCheck(input: IN) {
+    }
+
+    fun insertCheck(input: IN) {
+    }
+
     override fun select(pageable: Pageable): PageView<OUT> = autoRollback {
         table.selectAll().limit(pageable.pageSize, pageable.offset).map {
             table.tableToOutput(it)
@@ -40,6 +46,8 @@ interface CRUDServiceImpl<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID
 
     @Transactional
     override fun insert(input: IN): OUT = autoRollback {
+        insertCheck(input)
+        dataCheck(input)
         table.insertAndGetId {
             inputToTable(it, input)
             if (this is TimeTable) {
@@ -56,6 +64,7 @@ interface CRUDServiceImpl<IN : Any, OUT : CRUDResultView<ID>, ID : Comparable<ID
 
     @Transactional
     override fun update(id: ID, input: IN): OUT = autoRollback {
+        dataCheck(input)
         if (table.select { table.id eq id }.empty()) {
             throw BadRequestException("更新错误！未找到 id 为 $id 的数据.")
         }

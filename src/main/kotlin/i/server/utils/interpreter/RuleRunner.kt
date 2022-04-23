@@ -22,10 +22,14 @@ class RuleRunner(
         val copy = expressions.map { it.copy() }.toMutableList()
         val typeMap = LinkedHashMap<Int, RuleDataType>()
         fun ExecuteExpression.loadOnesType(
-            master: VariableExecuteVariable,
+            master: IExecuteVariable,
             other: IExecuteVariable
         ) {
-            val masterType = variables[master.name] ?: throw RuleBuildException("没有变量 $master.")
+            val masterType = when (master) {
+                is VariableExecuteVariable -> variables[master.name]!!
+                is ConstExecuteVariable -> master.type
+                else -> throw RuleBuildException("未知错误")
+            }
             val otherType = when (other) {
                 is ContextExecuteVariable -> typeMap[other.lastId]
                     ?: throw RuleBuildException("未知错误")
@@ -33,7 +37,7 @@ class RuleRunner(
                 else -> throw RuleBuildException("未知错误")
             }
             if (masterType != otherType) {
-                throw RuleBuildException("变量 ${master.name}($masterType) 与 $other 类型不一致.")
+                throw RuleBuildException("变量 $master 与 $other 类型不一致.")
             }
             val tryExecute = exp.execute.tryExecute(masterType)
             typeMap[id] = tryExecute
@@ -56,6 +60,10 @@ class RuleRunner(
                     throw RuleBuildException("变量 ${v.right} 与 ${v.left} 类型不一致.")
                 }
                 typeMap[v.id] = v.exp.execute.tryExecute(v.left.type)
+            } else if (v.left is ConstExecuteVariable) {
+                v.loadOnesType(v.left, v.right)
+            } else if (v.right is ConstExecuteVariable) {
+                v.loadOnesType(v.right, v.left)
             }
         }
         return typeMap[copy.last().id]!!
@@ -97,9 +105,11 @@ class RuleRunner(
             println(
                 RuleCompiler(
                     """
-                        (0.1 + 0.2 )/3
+                        'arch' + monitor.hostname  = 'linux'
                     """.trimIndent()
-                ).build().execute(mapOf()).second
+                ).apply {
+                    println(this)
+                }.build().execute(mapOf()).second
             )
         }
     }

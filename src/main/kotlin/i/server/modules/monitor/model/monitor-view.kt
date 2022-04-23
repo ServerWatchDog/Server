@@ -42,6 +42,13 @@ data class MonitorTypeResultView(
     val typeGroup: MiniMonitorTypeGroupResultView,
 ) : CRUDResultView<String>
 
+data class MiniMonitorTypeResultView2(
+    val id: String,
+    val name: String,
+    val description: String,
+    val type: MonitorType,
+)
+
 data class ClientMonitorTypeView(
     val clientId: Int,
     val typesId: List<String>,
