@@ -5,8 +5,11 @@ import i.server.modules.alarm.AlarmAuthority
 import i.server.modules.alarm.model.AlarmRuleResultView
 import i.server.modules.alarm.model.AlarmRuleView
 import i.server.modules.alarm.service.IAlarmRuleService
+import i.server.utils.template.SimpleView
 import i.server.utils.template.crud.CRUDController
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -19,4 +22,7 @@ class AlarmRuleController(private val service: IAlarmRuleService) :
     ) {
     @GetMapping("/vars")
     fun supportVars() = service.supportVars()
+
+    @PostMapping("/check")
+    fun checkRule(@RequestBody data: SimpleView<String>) = service.checkRule(data)
 }

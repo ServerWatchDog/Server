@@ -2,7 +2,6 @@ package i.server.modules.monitor.service.impl
 
 import i.server.modules.monitor.model.MiniMonitorTypeGroupResultView
 import i.server.modules.monitor.model.MiniMonitorTypeResultView2
-import i.server.modules.monitor.model.MonitorType
 import i.server.modules.monitor.model.MonitorTypeGroupTable
 import i.server.modules.monitor.model.MonitorTypeResultView
 import i.server.modules.monitor.model.MonitorTypeTable
@@ -10,6 +9,7 @@ import i.server.modules.monitor.model.MonitorTypeView
 import i.server.modules.monitor.model.MonitorValueTypeResultView
 import i.server.modules.monitor.service.IMonitorTypeService
 import i.server.utils.autoRollback
+import i.server.utils.interpreter.RuleDataType
 import i.server.utils.template.crud.CRUDServiceImpl
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.select
@@ -48,7 +48,8 @@ class MonitorTypeServiceImpl :
     }
 
     override fun getTypeList(): Set<MonitorValueTypeResultView> {
-        return MonitorType.values().map { MonitorValueTypeResultView(it.name, it.description) }.toSet()
+        return RuleDataType.values().filter { it != RuleDataType.ANY }
+            .map { MonitorValueTypeResultView(it.name, it.description) }.toSet()
     }
 
     override fun getAll(): List<MiniMonitorTypeResultView2> = autoRollback {

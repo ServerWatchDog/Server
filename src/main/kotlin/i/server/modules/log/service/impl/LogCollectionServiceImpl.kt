@@ -5,9 +5,9 @@ import i.server.modules.config.services.SoftInfoService
 import i.server.modules.log.model.ClientLogItemTable
 import i.server.modules.log.model.ClientLogTable
 import i.server.modules.log.service.ILogCollectionService
-import i.server.modules.monitor.model.MonitorType
 import i.server.modules.monitor.service.IClientMonitorTypeService
 import i.server.utils.autoRollback
+import i.server.utils.interpreter.RuleDataType
 import jakarta.annotation.PreDestroy
 import org.d7z.light.db.api.LightDB
 import org.d7z.logger4k.core.utils.getLogger
@@ -51,8 +51,14 @@ class LogCollectionServiceImpl(
                     it[createTime] = LocalDateTime.now()
                 }.value
                 db["client-monitor"]
-                    .map { d -> dataCovert.reduce<Map<String, MonitorType>>(d) }
+                    .map { d -> dataCovert.reduce<Map<String, RuleDataType>>(d) }
                     .orElseGet { clientMonitorService.getClientMonitor(clientId) }
+                    .filter { item -> // 排除长时间未上报的数据
+                        db["monitor.${item.key}.date"].filter { date ->
+                            dataCovert.reduce(date, LocalDateTime::class)
+                                .isAfter(LocalDateTime.now().minusSeconds(softInfoService.logRefreshDate))
+                        }.isPresent
+                    }
                     .forEach { id ->
                         db["monitor.${id.key}"].ifPresent { value ->
                             ClientLogItemTable.insert {

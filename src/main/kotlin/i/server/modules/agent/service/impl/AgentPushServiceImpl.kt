@@ -4,9 +4,9 @@ import i.server.modules.agent.model.AgentPushResultView
 import i.server.modules.agent.model.AgentPushView
 import i.server.modules.agent.model.ClientSessionData
 import i.server.modules.agent.service.IAgentPushService
-import i.server.modules.monitor.model.MonitorType
 import i.server.modules.monitor.service.IClientMonitorTypeService
 import i.server.utils.BadRequestException
+import i.server.utils.interpreter.RuleDataType
 import org.d7z.light.db.api.LightDB
 import org.d7z.light.db.modules.session.api.ISessionContext
 import org.d7z.objects.format.api.IDataCovert
@@ -32,13 +32,12 @@ class AgentPushServiceImpl(
                 val typesCache = dataCovert.format(clientMonitorService.getClientMonitor(sessionData.clientId))
                 this.put("monitor.types", typesCache)
                 typesCache
-            }.let { dataCovert.reduce<Map<String, MonitorType>>(it) }
+            }.let { dataCovert.reduce<Map<String, RuleDataType>>(it) }
             push.data.filter { supportTypes.containsKey(it.key) }.map {
                 it.key to (it.value to supportTypes[it.key]!!)
             }.forEach { (t, u) ->
-                if (u.second.check.check(u.first)) {
+                if (u.second.check(u.first)) {
                     this.put("monitor.$t", u.first)
-                    this.put("monitor.$t.type", u.second.name)
                     this.put("monitor.$t.date", dataCovert.format(LocalDateTime.now(), LocalDateTime::class))
                 } else {
                     throw BadRequestException("消息推送的格式不规范，数据 '${u.first}' 不是 '${u.second} 可用的格式.'")

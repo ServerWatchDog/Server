@@ -1,6 +1,7 @@
 package i.server.modules.monitor.model
 
 import i.server.modules.client.model.MiniClientResultView
+import i.server.utils.interpreter.RuleDataType
 import i.server.utils.template.crud.CRUDResultView
 
 data class MonitorTypeGroupView(
@@ -31,14 +32,14 @@ data class MonitorTypeView(
     val name: String,
     val description: String,
     val typeGroupId: Int,
-    val type: MonitorType,
+    val type: RuleDataType,
 )
 
 data class MonitorTypeResultView(
     override val id: String,
     val name: String,
     val description: String,
-    val type: MonitorType,
+    val type: RuleDataType,
     val typeGroup: MiniMonitorTypeGroupResultView,
 ) : CRUDResultView<String>
 
@@ -46,7 +47,7 @@ data class MiniMonitorTypeResultView2(
     val id: String,
     val name: String,
     val description: String,
-    val type: MonitorType,
+    val type: RuleDataType,
 )
 
 data class ClientMonitorTypeView(

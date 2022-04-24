@@ -1,13 +1,11 @@
 package i.server.utils.interpreter
 
-import i.server.utils.interpreter.RuleCompiler.*
-
-// ktlint-disable no-wildcard-imports
+import i.server.utils.interpreter.RuleCompiler.* // ktlint-disable no-wildcard-imports
 
 class RuleRunner(
     private val expressions: List<ExecuteExpression>
 ) {
-    val ruleVariables = expressions.flatMap {
+    fun ruleVariables() = expressions.flatMap {
         val listOf = mutableListOf<VariableExecuteVariable>()
         if (it.left is VariableExecuteVariable) {
             listOf.add(it.left)
@@ -28,12 +26,14 @@ class RuleRunner(
             val masterType = when (master) {
                 is VariableExecuteVariable -> variables[master.name]!!
                 is ConstExecuteVariable -> master.type
+                is ContextExecuteVariable -> typeMap[master.lastId]!!
                 else -> throw RuleBuildException("未知错误")
             }
             val otherType = when (other) {
                 is ContextExecuteVariable -> typeMap[other.lastId]
                     ?: throw RuleBuildException("未知错误")
                 is DataTypeUpdater -> other.type
+                is ContextExecuteVariable -> typeMap[other.lastId]!!
                 else -> throw RuleBuildException("未知错误")
             }
             if (masterType != otherType) {
@@ -43,7 +43,7 @@ class RuleRunner(
             typeMap[id] = tryExecute
             returnType = tryExecute
         }
-        for ((i, v) in copy.withIndex()) {
+        for (v in copy) {
             if (v.left is VariableExecuteVariable && v.right is VariableExecuteVariable) {
                 val left = variables[v.left.name] ?: throw RuleBuildException("没有变量 ${v.left}.")
                 val right = variables[v.right.name] ?: throw RuleBuildException("没有变量 ${v.right}.")
@@ -60,10 +60,8 @@ class RuleRunner(
                     throw RuleBuildException("变量 ${v.right} 与 ${v.left} 类型不一致.")
                 }
                 typeMap[v.id] = v.exp.execute.tryExecute(v.left.type)
-            } else if (v.left is ConstExecuteVariable) {
-                v.loadOnesType(v.left, v.right)
-            } else if (v.right is ConstExecuteVariable) {
-                v.loadOnesType(v.right, v.left)
+            } else {
+                v.loadOnesType(v.right, v.left) // 上下文有关类型推断
             }
         }
         return typeMap[copy.last().id]!!
@@ -87,7 +85,7 @@ class RuleRunner(
                 else -> throw RuleBuildException("未知错误！")
             }
         }
-        for ((i, v) in expressions.withIndex()) {
+        for (v in expressions) {
             val left = v.left.value()
             val right = v.right.value()
             if (left.type != right.type) {

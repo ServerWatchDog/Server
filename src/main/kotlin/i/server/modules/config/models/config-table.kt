@@ -1,9 +1,14 @@
 package i.server.modules.config.models
 
-import org.jetbrains.exposed.sql.Table
+import i.server.utils.interpreter.RuleDataType
+import org.jetbrains.exposed.dao.id.IdTable
 
-object SoftConfigTable : Table("t_config") {
-    val key = varchar("key", 255).index()
+object SoftConfigTable : IdTable<String>("t_config") {
+    override val id = varchar("key", 255).entityId()
     val value = varchar("value", 4096).index()
-    override val primaryKey = PrimaryKey(key)
+    val description = varchar("description", 2048).default("")
+    val defaultValue = varchar("default_value", 4096).default("")
+    val internalData = bool("internal_data").default(true)
+    val type = enumerationByName("type", 16, RuleDataType::class).default(RuleDataType.TEXT)
+    override val primaryKey = PrimaryKey(id)
 }

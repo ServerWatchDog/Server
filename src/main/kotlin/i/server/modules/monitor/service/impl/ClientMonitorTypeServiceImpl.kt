@@ -7,10 +7,10 @@ import i.server.modules.monitor.model.ClientMonitorTypeResultView
 import i.server.modules.monitor.model.ClientMonitorTypeTable
 import i.server.modules.monitor.model.ClientMonitorTypeView
 import i.server.modules.monitor.model.MiniMonitorTypeResultView
-import i.server.modules.monitor.model.MonitorType
 import i.server.modules.monitor.model.MonitorTypeTable
 import i.server.modules.monitor.service.IClientMonitorTypeService
 import i.server.utils.autoRollback
+import i.server.utils.interpreter.RuleDataType
 import i.server.utils.template.PageView
 import org.d7z.light.db.api.LightDB
 import org.jetbrains.exposed.sql.batchInsert
@@ -63,7 +63,7 @@ class ClientMonitorTypeServiceImpl(
         return ClientMonitorTypeResultView(client, monitors)
     }
 
-    override fun getClientMonitor(clientId: Int): Map<String, MonitorType> = autoRollback {
+    override fun getClientMonitor(clientId: Int): Map<String, RuleDataType> = autoRollback {
         ClientMonitorTypeTable.leftJoin(MonitorTypeTable)
             .select { ClientMonitorTypeTable.client eq clientId }.associate {
                 it[MonitorTypeTable.id].value to it[MonitorTypeTable.type]

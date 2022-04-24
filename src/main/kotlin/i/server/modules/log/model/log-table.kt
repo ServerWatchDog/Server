@@ -34,7 +34,7 @@ object ClientAlarmLogTable : LongIdTable("t_log_client_alarm") {
 object MessageSendLogTable : IntIdTable("t_log_send_message") {
     val address = varchar("address", 64)
     val title = varchar("title", 120)
-    val messsage = varchar("message", 2048)
+    val message = varchar("message", 2048)
     val status = bool("status")
     val sendTime = datetime("send_time").defaultExpression(CurrentDateTime())
 }
@@ -45,6 +45,6 @@ object MessageSendLogTable : IntIdTable("t_log_send_message") {
 object OperationLogTable : LongIdTable("t_log_operation") {
     val name = varchar("name", 64)
     val obj = varchar("object", 64)
-    val nessage = varchar("message", 256)
+    val message = varchar("message", 256)
     val createTime = datetime("create_time").defaultExpression(CurrentDateTime())
 }

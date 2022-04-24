@@ -1,6 +1,6 @@
 package i.server.modules.alarm.model
 
-import i.server.modules.monitor.model.MonitorType
+import i.server.utils.interpreter.RuleDataType
 import i.server.utils.template.crud.CRUDResultView
 
 data class AlarmRuleView(
@@ -13,6 +13,11 @@ data class AlarmRuleResultView(
     val name: String,
     val expression: String,
 ) : CRUDResultView<Int>
+
+data class MiniAlarmRuleResultView(
+    val id: Int,
+    val name: String
+)
 
 data class MiniRuleVariablesResultView(
     val key: String,
@@ -29,6 +34,25 @@ data class SupportVarsResultView(
 data class InternalSupportVarsResultView(
     val id: String,
     val name: String,
-    val type: MonitorType,
+    val type: RuleDataType,
     val description: String
+)
+
+data class AlarmGroupView(
+    val name: String,
+    val description: String,
+    val rules: List<Int>
+)
+
+data class AlarmGroupResultView(
+    override val id: Int,
+    val name: String,
+    val description: String,
+    val rules: List<MiniAlarmRuleResultView>
+) : CRUDResultView<Int>
+
+data class ClientAlarmResultView(
+    val id: Int,
+    val name: String,
+    val rules: List<MiniAlarmRuleResultView>
 )

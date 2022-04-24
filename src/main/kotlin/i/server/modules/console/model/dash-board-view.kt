@@ -1,6 +1,6 @@
 package i.server.modules.console.model
 
-import i.server.modules.monitor.model.MonitorType
+import i.server.utils.interpreter.RuleDataType
 import java.time.LocalDateTime
 
 data class DashBoardResultView(
@@ -11,6 +11,6 @@ data class DashBoardResultView(
 
 data class MiniMonitorTypeDataResult(
     val name: String,
-    val type: MonitorType,
+    val type: RuleDataType,
     val value: String,
 )

@@ -1,10 +1,10 @@
 package i.server.modules.agent.model
 
-import i.server.modules.monitor.model.MonitorType
+import i.server.utils.interpreter.RuleDataType
 
 data class AgentInfoResultView(
     val refreshTime: Long,
-    val pushType: Map<String, MonitorType>,
+    val pushType: Map<String, RuleDataType>,
 )
 
 data class AgentPushView(

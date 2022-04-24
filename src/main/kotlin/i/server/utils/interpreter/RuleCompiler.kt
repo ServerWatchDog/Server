@@ -128,7 +128,9 @@ class RuleCompiler(
 
     data class VariableExecuteVariable(val name: String, override var type: RuleDataType) :
         IExecuteVariable,
-        DataTypeUpdater
+        DataTypeUpdater {
+        override fun toString() = "$type(\$$name)"
+    }
 
     data class ContextExecuteVariable(val lastId: Int) : IExecuteVariable
 
